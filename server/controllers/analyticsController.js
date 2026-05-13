@@ -296,23 +296,23 @@ exports.getClassAnalytics = async (req, res) => {
 
       grades.forEach((gradeDoc) => {
         const sid = gradeDoc.student.toString();
-        
+
         const relevantAssessments = (gradeDoc.assessments || []).filter(a => {
-            if (!a.assessmentType) return false;
-            const atId = a.assessmentType.toString();
-            const uniqueKey = `${sid}-${atId}`;
-            if (atId.toString() === type._id.toString() && !seenAssessments.has(uniqueKey)) {
-                seenAssessments.add(uniqueKey);
-                return true;
-            }
-            return false;
+          if (!a.assessmentType) return false;
+          const atId = a.assessmentType.toString();
+          const uniqueKey = `${sid}-${atId}`;
+          if (atId.toString() === type._id.toString() && !seenAssessments.has(uniqueKey)) {
+            seenAssessments.add(uniqueKey);
+            return true;
+          }
+          return false;
         });
 
         relevantAssessments.forEach(assessmentData => {
-            if (assessmentData.score !== null && assessmentData.score !== undefined) {
-                if (!studentAnalysis[sid]) studentAnalysis[sid] = 0;
-                studentAnalysis[sid] += assessmentData.score;
-            }
+          if (assessmentData.score !== null && assessmentData.score !== undefined) {
+            if (!studentAnalysis[sid]) studentAnalysis[sid] = 0;
+            studentAnalysis[sid] += assessmentData.score;
+          }
         });
       });
 
@@ -445,30 +445,30 @@ exports.getSubjectPerformanceAnalysis = async (req, res) => {
             const atId = a.assessmentType.toString();
             const uniqueKey = `${sid}-${atId}`;
             if (atIdSet.has(atId) && !seenAssessments.has(uniqueKey)) {
-                seenAssessments.add(uniqueKey);
-                return true;
+              seenAssessments.add(uniqueKey);
+              return true;
             }
             return false;
           });
           if (relevant.length > 0) {
-              score = relevant.reduce((s, a) => s + (a.score || 0), 0);
-              hasScore = true;
+            score = relevant.reduce((s, a) => s + (a.score || 0), 0);
+            hasScore = true;
           }
         } else {
           if (g.finalScore !== undefined && g.finalScore !== null) {
-              score = g.finalScore;
-              hasScore = true;
+            score = g.finalScore;
+            hasScore = true;
           }
         }
 
         if (hasScore) {
-            if (!studentAnalysis[sid]) {
-              studentAnalysis[sid] = {
-                score: 0,
-                gender: g.student.gender
-              };
-            }
-            studentAnalysis[sid].score += score;
+          if (!studentAnalysis[sid]) {
+            studentAnalysis[sid] = {
+              score: 0,
+              gender: g.student.gender
+            };
+          }
+          studentAnalysis[sid].score += score;
         }
       });
 
@@ -981,105 +981,272 @@ exports.getCumulativeClassAnalytics = async (req, res) => {
 
 exports.getStreamAnalysisSummary = async (req, res) => {
   const { classId, term, academicYear } = req.query;
-  const Student = require("../models/Student");
-  const Grade = require("../models/Grade");
-  const AssessmentType = require("../models/AssessmentType");
-  const Class = require("../models/Class");
 
   if (!classId || !term || !academicYear) {
     return res.status(400).json({ message: "Missing required fields." });
   }
 
   try {
-    // 1. Get all streams for this class
-    const streams = await Class.find({ parentClass: classId }).populate("parentClass", "className");
-    if (streams.length === 0) {
-        // If no streams found, maybe classId IS the stream or there are no streams
-        const self = await Class.findById(classId).populate("parentClass", "className");
-        if (self) streams.push(self);
+    const Stream = require("../models/Stream");
+    const Division = require("../models/Division");
+
+    const GRADE_LABELS = ["D1", "D2", "C3", "C4", "C5", "C6", "P7", "P8", "F9"];
+    const TEST_PERIODS = [
+      { key: "BOT", regex: /^beginning of term$/i },
+      { key: "MID", regex: /^mid\s*term$/i },
+      { key: "EOT", regex: /^end of term$/i },
+    ];
+
+    // ── 1. Resolve grading scale & division scale ──────────────────────────
+    const classDoc = await Class.findById(classId).select("className");
+    if (!classDoc) {
+      return res.status(404).json({ message: "Class not found." });
     }
 
-    const testPeriods = ["Beginning of Term", "MID Term", "End of Term"];
-    const gradeLabels = ["D1", "D2", "C3", "C4", "C5", "C6", "P7", "P8", "F9"];
+    let gradingScale = await GradingScale.findOne({
+      applicableClasses: classDoc.className,
+      isActive: true,
+    });
+    if (!gradingScale) {
+      const prefix = classDoc.className.match(/^[a-zA-Z]+\d+/)?.[0] || classDoc.className;
+      gradingScale = await GradingScale.findOne({ applicableClasses: prefix, isActive: true });
+    }
+    if (!gradingScale) {
+      gradingScale = await GradingScale.findOne({ isActive: true });
+    }
 
+    let divisionScale = await Division.findOne({
+      applicableClasses: classDoc.className,
+      isActive: true,
+    });
+    if (!divisionScale) {
+      const prefix = classDoc.className.match(/^[a-zA-Z]+\d+/)?.[0] || classDoc.className;
+      divisionScale = await Division.findOne({ applicableClasses: prefix, isActive: true });
+    }
+    if (!divisionScale) {
+      divisionScale = await Division.findOne({ isActive: true });
+    }
+
+    // Helper: percentage → grade letter
+    const pctToGrade = (pct) => {
+      const p = Math.round(pct);
+      if (gradingScale?.ranges?.length) {
+        const sorted = [...gradingScale.ranges].sort((a, b) => b.minScore - a.minScore);
+        for (const r of sorted) {
+          if (p >= r.minScore && p <= r.maxScore) return r.grade;
+        }
+      }
+      if (p >= 90) return "D1";
+      if (p >= 80) return "D2";
+      if (p >= 70) return "C3";
+      if (p >= 60) return "C4";
+      if (p >= 50) return "C5";
+      if (p >= 45) return "C6";
+      if (p >= 40) return "P7";
+      if (p >= 35) return "P8";
+      return "F9";
+    };
+
+    // Helper: aggregate sum → division
+    const aggToDivision = (agg) => {
+      if (divisionScale?.ranges?.length) {
+        for (const r of divisionScale.ranges) {
+          if (agg >= r.minScore && agg <= r.maxScore) return r.division;
+        }
+      }
+      if (agg <= 12) return "Div 1";
+      if (agg <= 24) return "Div 2";
+      if (agg <= 29) return "Div 3";
+      if (agg <= 33) return "Div 4";
+      return "Div U";
+    };
+
+    // ── 2. Fetch all streams for this class ───────────────────────────────
+    const streams = await Stream.find({ classId }).lean();
+
+    // If no streams configured, treat the whole class as one "General" stream
+    const streamList = streams.length > 0
+      ? streams.map(s => ({ _id: s._id, streamName: s.streamName }))
+      : [{ _id: null, streamName: "General" }];
+
+    // ── 3. Pre-fetch all AssessmentTypes for this class / term / year ─────
+    const allATs = await AssessmentType.find({
+      class: classId,
+      term,
+      year: Number(academicYear),
+    }).lean();
+
+    // Group by test period key
+    const atsByPeriod = { BOT: [], MID: [], EOT: [] };
+    for (const at of allATs) {
+      for (const tp of TEST_PERIODS) {
+        if (tp.regex.test(at.name.trim())) {
+          atsByPeriod[tp.key].push(at);
+          break;
+        }
+      }
+    }
+
+    // ── 4. Build summary per stream ───────────────────────────────────────
     const streamSummaries = [];
 
-    for (const stream of streams) {
-        const streamData = {
-            parentClassName: stream.parentClass?.className || stream.className || "All",
-            streamName: stream.streamName || "General",
-            periods: []
+    for (const stream of streamList) {
+      // Students in this stream
+      const studentQuery = { class: classId, status: "Active" };
+      if (stream._id) studentQuery.stream = stream._id;
+      const students = await Student.find(studentQuery).select("_id").lean();
+      const studentIds = students.map(s => s._id);
+
+      const streamData = {
+        parentClassName: classDoc.className,
+        streamName: stream.streamName,
+        periods: [],
+      };
+
+      for (const tp of TEST_PERIODS) {
+        const periodStats = {
+          name: tp.key,
+          grades: { D1: 0, D2: 0, C3: 0, C4: 0, C5: 0, C6: 0, P7: 0, P8: 0, F9: 0 },
+          total: 0,
+          passRate: 0,
+          divisions: { "Div 1": 0, "Div 2": 0, "Div 3": 0, "Div 4": 0, "Div U": 0, "Div X": 0 },
+          divisionTotal: 0,
+          divisionPassRate: 0,
+          divisionRank: 0
         };
 
-        for (const period of testPeriods) {
-            const periodStats = {
-                name: period === "Beginning of Term" ? "BOT" : period === "MID Term" ? "MID" : "EOT",
-                grades: { D1: 0, D2: 0, C3: 0, C4: 0, C5: 0, C6: 0, P7: 0, P8: 0, F9: 0 },
-                total: 0,
-                passRate: 0
-            };
+        const ats = atsByPeriod[tp.key];
+        if (ats.length > 0 && studentIds.length > 0) {
+          // Group ATs by subject so we can compute a per-student percentage per subject
+          const atBySubject = {};
+          for (const at of ats) {
+            const subId = at.subject.toString();
+            if (!atBySubject[subId]) atBySubject[subId] = { totalMarks: 0, atIds: [] };
+            atBySubject[subId].totalMarks += at.totalMarks;
+            atBySubject[subId].atIds.push(at._id.toString());
+          }
 
-            // Find all assessment types for this stream, period, term, year
-            const atypes = await AssessmentType.find({
-                class: stream._id,
-                name: { $regex: new RegExp(`^${period.trim()}$`, "i") },
-                term,
-                year: academicYear
-            });
+          const allAtIds = ats.map(a => a._id);
 
-            if (atypes.length > 0) {
-                const atIds = atypes.map(a => a._id);
-                const grades = await Grade.find({
-                    "assessments.assessmentType": { $in: atIds }
-                });
+          // Fetch grades for these students + these ATs
+          const gradesDocs = await Grade.find({
+            student: { $in: studentIds },
+            term,
+            academicYear,
+            "assessments.assessmentType": { $in: allAtIds },
+          }).select("student subject assessments").lean();
 
-                grades.forEach(g => {
-                    (g.assessments || []).forEach(a => {
-                        if (a.assessmentType && atIds.includes(a.assessmentType.toString())) {
-                            if (a.grade && gradeLabels.includes(a.grade)) {
-                                periodStats.grades[a.grade]++;
-                                periodStats.total++;
-                            }
-                        }
-                    });
-                });
+          // For each grade doc, sum score per subject per student
+          // Then convert to grade letter and tally
+          // studentSubjectScore: { "studentId:subjectId" -> score }
+          const studentSubjectScore = {};
+          const seenKeys = new Set();
+
+          for (const g of gradesDocs) {
+            const sid = g.student.toString();
+            const subId = g.subject.toString();
+            if (!atBySubject[subId]) continue;
+
+            for (const a of (g.assessments || [])) {
+              if (!a.assessmentType) continue;
+              const atId = a.assessmentType.toString();
+              const uniqueKey = `${sid}-${atId}`;
+              if (!atBySubject[subId].atIds.includes(atId)) continue;
+              if (seenKeys.has(uniqueKey)) continue;
+              seenKeys.add(uniqueKey);
+
+              const key = `${sid}:${subId}`;
+              studentSubjectScore[key] = (studentSubjectScore[key] || 0) + (a.score || 0);
+            }
+          }
+
+          const studentAggregates = {}; // { sid: { count: 0, sum: 0 } }
+
+          // Tally grade letters
+          for (const [key, score] of Object.entries(studentSubjectScore)) {
+            const [sid, subId] = key.split(":");
+            const totalMarks = atBySubject[subId]?.totalMarks || 0;
+            if (totalMarks === 0) continue;
+            const pct = (score / totalMarks) * 100;
+            const grade = pctToGrade(pct);
+
+            if (GRADE_LABELS.includes(grade)) {
+              periodStats.grades[grade]++;
+              periodStats.total++;
             }
 
-            // Calculate pass rate (D1 to P8 are passes in Uganda)
-            const passes = periodStats.total - periodStats.grades.F9;
-            periodStats.passRate = periodStats.total > 0 ? Math.round((passes / periodStats.total) * 100) : 0;
+            let agg = parseInt(grade.replace(/\D/g, ''));
+            if (isNaN(agg)) agg = 9;
 
-            streamData.periods.push(periodStats);
+            if (!studentAggregates[sid]) studentAggregates[sid] = { count: 0, sum: 0 };
+            studentAggregates[sid].count++;
+            studentAggregates[sid].sum += agg;
+          }
+
+          const totalSubjects = Object.keys(atBySubject).length;
+
+          // Tally divisions
+          for (const sid of studentIds) {
+            const data = studentAggregates[sid];
+            if (!data || data.count < totalSubjects) {
+              periodStats.divisions["Div X"]++;
+            } else {
+              const div = aggToDivision(data.sum);
+              if (periodStats.divisions[div] !== undefined) {
+                periodStats.divisions[div]++;
+              }
+            }
+            periodStats.divisionTotal++;
+          }
         }
-        streamSummaries.push(streamData);
+
+        // Pass rate: sum of D1 to C6
+        const passes =
+          periodStats.grades.D1 +
+          periodStats.grades.D2 +
+          periodStats.grades.C3 +
+          periodStats.grades.C4 +
+          periodStats.grades.C5 +
+          periodStats.grades.C6;
+        periodStats.passRate = periodStats.total > 0
+          ? Math.round((passes / periodStats.total) * 100)
+          : 0;
+
+        // Division pass rate: Div 1-3 are passes
+        const divPasses =
+          periodStats.divisions["Div 1"] +
+          periodStats.divisions["Div 2"] +
+          periodStats.divisions["Div 3"];
+        periodStats.divisionPassRate = periodStats.divisionTotal > 0
+          ? Math.round((divPasses / periodStats.divisionTotal) * 100)
+          : 0;
+
+        streamData.periods.push(periodStats);
+      }
+
+      streamSummaries.push(streamData);
     }
 
-    // 2. Rank calculation
-    // We want to rank each period row across ALL streams.
-    // E.g. All BOT rows are ranked against each other, all MID against each other, etc.
-    for (const periodName of ["BOT", "MID", "EOT"]) {
-        const rowsToRank = [];
-        streamSummaries.forEach(s => {
-            const p = s.periods.find(x => x.name === periodName);
-            if (p) rowsToRank.push(p);
-        });
+    // ── 5. Rank streams per test period by pass rate ──────────────────────
+    for (const tp of TEST_PERIODS) {
+      const rows = streamSummaries
+        .map(s => s.periods.find(p => p.name === tp.key))
+        .filter(Boolean);
 
-        // Sort by passRate descending
-        rowsToRank.sort((a, b) => b.passRate - a.passRate);
+      // Rank by Grade pass rate
+      rows.sort((a, b) => b.passRate - a.passRate);
+      rows.forEach((row, i) => { row.rank = i + 1; });
 
-        // Assign Rank
-        rowsToRank.forEach((row, index) => {
-            row.rank = index + 1;
-        });
+      // Rank by Division pass rate
+      rows.sort((a, b) => b.divisionPassRate - a.divisionPassRate);
+      rows.forEach((row, i) => { row.divisionRank = i + 1; });
     }
 
-    res.status(200).json({
-        success: true,
-        data: streamSummaries
-    });
+    res.status(200).json({ success: true, data: streamSummaries });
 
   } catch (error) {
-    console.error("Stream Summary Error:", error);
-    res.status(500).json({ message: "Server error generating stream summary." });
+    console.error("Stream Summary Error MESSAGE:", error.message);
+    console.error("Stream Summary Error STACK:", error.stack);
+    res.status(500).json({ message: error.message || "Server error generating stream summary." });
   }
 };
