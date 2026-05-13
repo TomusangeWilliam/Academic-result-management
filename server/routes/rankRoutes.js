@@ -2,11 +2,11 @@ const express = require('express');
 const router = express.Router();
 
 const { 
-    getSemesterRank, 
+    getTermRank, 
     getOverallRank 
 } = require('../controllers/rankController');
 
-router.get('/class-rank/:studentId', getSemesterRank);
+router.get('/class-rank/:studentId', getTermRank);
 
 router.get('/overall-rank/:studentId', getOverallRank);
 

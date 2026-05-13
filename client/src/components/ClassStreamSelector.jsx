@@ -6,6 +6,7 @@ const ClassStreamSelector = ({
     onClassChange, 
     selectedStream, 
     onStreamChange, 
+    showStream = true,
     required = false,
     showAllStreamsOption = false,
     labelClass = "block text-gray-700 text-sm font-bold mb-2",
@@ -49,7 +50,7 @@ const ClassStreamSelector = ({
     };
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className={`grid grid-cols-1 ${showStream ? "md:grid-cols-2" : "md:grid-cols-1"} gap-4`}>
             <div>
                 <label className={labelClass}>Class {required && <span className="text-red-500">*</span>}</label>
                 <select 
@@ -66,24 +67,26 @@ const ClassStreamSelector = ({
                 </select>
             </div>
 
-            <div>
-                <label className={labelClass}>Stream {required && !showAllStreamsOption && <span className="text-red-500">*</span>}</label>
-                <select 
-                    value={selectedStream || ''} 
-                    onChange={(e) => onStreamChange(e.target.value)}
-                    className={selectClass}
-                    required={required && !showAllStreamsOption}
-                    disabled={!selectedClass || streams.length === 0}
-                >
-                    <option value="">{showAllStreamsOption ? "All Streams" : "Select Stream"}</option>
-                    {/* Explicit "all" option only if we want to distinguish from "not selected" */}
-                    {streams.map(str => (
-                        <option key={str._id} value={str._id}>{str.streamName}</option>
-                    ))}
-                </select>
-                {!selectedClass && <p className="text-xs text-gray-500 mt-1">Select a class first</p>}
-                {selectedClass && streams.length === 0 && <p className="text-xs text-orange-500 mt-1">No streams available</p>}
-            </div>
+            {showStream && (
+                <div>
+                    <label className={labelClass}>Stream {required && !showAllStreamsOption && <span className="text-red-500">*</span>}</label>
+                    <select 
+                        value={selectedStream || ''} 
+                        onChange={(e) => onStreamChange && onStreamChange(e.target.value)}
+                        className={selectClass}
+                        required={required && !showAllStreamsOption}
+                        disabled={!selectedClass || streams.length === 0}
+                    >
+                        <option value="">{showAllStreamsOption ? "All Streams" : "Select Stream"}</option>
+                        {/* Explicit "all" option only if we want to distinguish from "not selected" */}
+                        {streams.map(str => (
+                            <option key={str._id} value={str._id}>{str.streamName}</option>
+                        ))}
+                    </select>
+                    {!selectedClass && <p className="text-xs text-gray-500 mt-1">Select a class first</p>}
+                    {selectedClass && streams.length === 0 && <p className="text-xs text-orange-500 mt-1">No streams available</p>}
+                </div>
+            )}
         </div>
     );
 };

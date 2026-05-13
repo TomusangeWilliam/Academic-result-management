@@ -35,9 +35,9 @@ const saveGradeSheet = (data) => {
     return api.post('/grades/sheet', data);
 };
 
-const getGradeDetails = ({ studentId, subjectId, semester, academicYear }) => {
+const getGradeDetails = ({ studentId, subjectId, term, academicYear }) => {
     return api.get(`${API_URL}/details`, {
-        params: { studentId, subjectId, semester, academicYear }
+        params: { studentId, subjectId, term, academicYear }
     });
 };
 
@@ -49,6 +49,10 @@ const uploadPdfGrades = (formData) => {
     });
 };
 
+const transferMarks = (data) => {
+    return api.post(`${API_URL}/transfer`, data);
+};
+
 export default { 
     getGradesByStudent, 
     createGrade,
@@ -58,5 +62,6 @@ export default {
     getGradeSheet, 
     saveGradeSheet, 
     getGradeDetails,
-    uploadPdfGrades
+    uploadPdfGrades,
+    transferMarks
 };

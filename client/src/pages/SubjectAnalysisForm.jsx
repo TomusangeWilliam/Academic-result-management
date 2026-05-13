@@ -16,7 +16,7 @@ const ThisYear = ()=>{
 function SubjectAnalysisForm() {
   const Navigate = useNavigate()
   const [gradeLevel, setGradeLevel] = useState("");
-  const [semester,setSemester] = useState('First Semester')
+  const [term,setTerm] = useState("TERM 1 2026")
   const [year, setYear] = useState(ThisYear());
   const [error,setError] = useState(null)
 
@@ -24,9 +24,9 @@ function SubjectAnalysisForm() {
     e.preventDefault();
     setError(null)
     try {
-        const res = await assessmentTypeService.getAllAssessments(year,semester)
+        const res = await assessmentTypeService.getAllAssessments(year,term)
         if(res?.data.length > 0){
-          Navigate('/subject-analysis', { state: { assessmentTypes: res.data, gradeLevel, year, semester } });
+          Navigate('/subject-analysis', { state: { assessmentTypes: res.data, gradeLevel, year, term } });
         }else{
           setError("No Assessment type is for this requirement!")
         }
@@ -61,10 +61,10 @@ function SubjectAnalysisForm() {
         </div>
 
         <div>
-          <label className="block font-semibold mb-1 text-gray-700">Semester</label>
-          <select name="semester" className={inputStyle} onChange={(e)=>setSemester(e.target.value)}>
-            <option value="First Semester">First Semester</option>
-            <option value="Second Semester">Second Semester</option>
+          <label className="block font-semibold mb-1 text-gray-700">Term</label>
+          <select name="term" className={inputStyle} onChange={(e)=>setTerm(e.target.value)}>
+            <option value="TERM 1 2026">First Term</option>
+            <option value="TERM 2 2026">Second Term</option>
           </select>
         </div>
 

@@ -20,7 +20,7 @@ const SubjectRosterPage = () => {
     const [selectedSubject, setSelectedSubject] = useState(location.state?.subjectId || '');
     const [selectedStream, setSelectedStream] = useState('all');
     const [streams, setStreams] = useState([]);
-    const [semester, setSemester] = useState('First Semester');
+    const [term, setTerm] = useState("TERM 1 2026");
     const [academicYear, setAcademicYear] = useState('');
     const [rosterData, setRosterData] = useState(null);
     const [loading, setLoading] = useState(false);
@@ -32,7 +32,7 @@ const SubjectRosterPage = () => {
             try {
                 const res = await configService.getConfig();
                 if (res.data.data) {
-                    setSemester(res.data.data.currentSemester);
+                    setTerm(res.data.data.currentTerm);
                     setAcademicYear(res.data.data.currentAcademicYear);
                 }
             } catch (err) {
@@ -116,7 +116,7 @@ const SubjectRosterPage = () => {
                 classId,
                 streamId: selectedStream,
                 subjectId: targetId,
-                semester,
+                term,
                 academicYear
             });
             setRosterData(response.data);
@@ -171,7 +171,7 @@ const SubjectRosterPage = () => {
                     return gradeService.saveGradeSheet({
                         studentId: mongoId,
                         subjectId: selectedSubject,
-                        semester,
+                        term,
                         academicYear,
                         assessments: assessmentsArray
                     });
@@ -285,10 +285,10 @@ const SubjectRosterPage = () => {
                         </select>
                     </div>
                     <div className="space-y-1">
-                        <label className="text-[10px] font-black text-slate-400 uppercase ml-1">{t('semester')}</label>
-                        <select value={semester} onChange={e => setSemester(e.target.value)} className="w-full p-3 rounded-xl border-2 border-slate-200 font-bold text-slate-700">
-                            <option value="First Semester">{t('sem_1')}</option>
-                            <option value="Second Semester">{t('sem_2')}</option>
+                        <label className="text-[10px] font-black text-slate-400 uppercase ml-1">{t('term')}</label>
+                        <select value={term} onChange={e => setTerm(e.target.value)} className="w-full p-3 rounded-xl border-2 border-slate-200 font-bold text-slate-700">
+                            <option value="TERM 1 2026">{t('sem_1')}</option>
+                            <option value="TERM 2 2026">{t('sem_2')}</option>
                         </select>
                     </div>
                     <div className="space-y-1">
@@ -332,7 +332,7 @@ const SubjectRosterPage = () => {
                         </div>
                         <div className="text-center mt-2">
                             <span className="bg-slate-800 text-white px-4 py-1 text-[10px] font-bold uppercase tracking-widest rounded-full">
-                                {semester}
+                                {term}
                             </span>
                         </div>
                     </div>

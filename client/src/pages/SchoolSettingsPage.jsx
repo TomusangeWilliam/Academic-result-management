@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import configService from '../services/configService';
-import semesterService from '../services/semesterService';
+import termService from '../services/termService';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 
@@ -8,10 +8,10 @@ const SchoolSettingsPage = () => {
     const { t } = useTranslation();
     const [config, setConfig] = useState({
         currentAcademicYear: '',
-        currentSemester: 'First Semester',
+        currentTerm: "TERM 1 2026",
         schoolName: ''
     });
-    const [semesters, setSemesters] = useState([]);
+    const [terms, setTerms] = useState([]);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState({ type: '', text: '' });
@@ -19,15 +19,15 @@ const SchoolSettingsPage = () => {
     useEffect(() => {
         const loadInitialData = async () => {
             try {
-                const [configRes, semestersRes] = await Promise.all([
+                const [configRes, termsRes] = await Promise.all([
                     configService.getConfig(),
-                    semesterService.getSemesters()
+                    termService.getTerms()
                 ]);
                 
                 if (configRes.data.data) {
                     setConfig(configRes.data.data);
                 }
-                setSemesters(semestersRes.data.data);
+                setTerms(termsRes.data.data);
             } catch (err) {
                 console.error("Error fetching data:", err);
             } finally {
@@ -62,7 +62,7 @@ const SchoolSettingsPage = () => {
             <h2 className="text-3xl font-bold text-gray-800 mb-6 flex justify-between items-center">
                 <span>⚙️ {t('school_settings') || 'School Settings'}</span>
                 <div className="flex gap-4">
-                    <Link to="/admin/semesters" className="text-sm text-blue-500 hover:underline font-normal">Manage Semesters &rarr;</Link>
+                    <Link to="/admin/terms" className="text-sm text-blue-500 hover:underline font-normal">Manage Terms &rarr;</Link>
                     <Link to="/admin/grading-scales" className="text-sm text-blue-500 hover:underline font-normal">Manage Grading Scales &rarr;</Link>
                     <Link to="/admin/divisions" className="text-sm text-blue-500 hover:underline font-normal">Manage Divisions &rarr;</Link>
                 </div>
@@ -94,14 +94,14 @@ const SchoolSettingsPage = () => {
                         <label className="block text-sm font-bold text-gray-700 mb-2">
                             📅 {t('active_term') || 'Active Term'}
                         </label>
-                        {semesters.length > 0 ? (
+                        {terms.length > 0 ? (
                             <select 
-                                name="currentSemester"
-                                value={config.currentSemester}
+                                name="currentTerm"
+                                value={config.currentTerm}
                                 onChange={handleChange}
                                 className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all bg-white"
                             >
-                                {semesters.map(s => (
+                                {terms.map(s => (
                                     <option key={s._id} value={s.name}>{s.name}</option>
                                 ))}
                                 <option value="custom">-- Custom (type below) --</option>
@@ -109,19 +109,19 @@ const SchoolSettingsPage = () => {
                         ) : (
                              <input 
                                 type="text" 
-                                name="currentSemester"
-                                value={config.currentSemester}
+                                name="currentTerm"
+                                value={config.currentTerm}
                                 onChange={handleChange}
                                 className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                                 placeholder="e.g. Term 1"
                             />
                         )}
                         
-                        {(config.currentSemester === 'custom' || semesters.length === 0) && (
+                        {(config.currentTerm === 'custom' || terms.length === 0) && (
                             <input 
                                 type="text" 
-                                name="currentSemesterCustom"
-                                onChange={(e) => setConfig({ ...config, currentSemester: e.target.value })}
+                                name="currentTermCustom"
+                                onChange={(e) => setConfig({ ...config, currentTerm: e.target.value })}
                                 className="w-full mt-2 border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                                 placeholder="Type term name"
                             />

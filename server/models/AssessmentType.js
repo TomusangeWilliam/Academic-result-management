@@ -32,9 +32,9 @@ const assessmentTypeSchema = new mongoose.Schema({
         required: [true, 'Please specify the month for this assessment'],
         enum: MONTHS
     },
-    semester: {
+    term: {
         type: String,
-        required: [true, 'Please specify the semester for this assessment']
+        required: [true, 'Please specify the term for this assessment']
     },
     year: {
         type: Number,
@@ -45,7 +45,7 @@ const assessmentTypeSchema = new mongoose.Schema({
 });
 
 assessmentTypeSchema.index(
-    { name: 1, subject: 1, class: 1, semester: 1, month: 1 },
+    { name: 1, subject: 1, class: 1, term: 1, month: 1 },
     { unique: true }
 );
 

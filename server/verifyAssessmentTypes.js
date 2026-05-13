@@ -32,7 +32,7 @@ async function verifyAssessmentTypes() {
           subject: assessmentType.subject ? assessmentType.subject.name : 'Unknown',
           class: assessmentType.class ? assessmentType.class.className : 'Unknown',
           totalMarks: assessmentType.totalMarks,
-          semester: assessmentType.semester,
+          term: assessmentType.term,
           month: assessmentType.month,
           year: assessmentType.year
         });
@@ -41,7 +41,7 @@ async function verifyAssessmentTypes() {
       for (const [typeName, types] of Object.entries(groupedTypes)) {
         console.log(`\n${typeName} (${types.length} entries):`);
         for (const type of types) {
-          console.log(`  - ${type.subject} (${type.class}) - ${type.totalMarks} marks - ${type.semester} ${type.year}`);
+          console.log(`  - ${type.subject} (${type.class}) - ${type.totalMarks} marks - ${type.term} ${type.year}`);
         }
       }
     }

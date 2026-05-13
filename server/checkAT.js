@@ -18,7 +18,7 @@ const run = async () => {
 
         const ats = await AT.find({ class: cls._id });
         console.log(`\nClass ${cls.className} (${count} students) — ${ats.length} ATs:`);
-        ats.slice(0, 6).forEach(a => console.log(`  name="${a.name}" semester="${a.semester}" year=${a.year}`));
+        ats.slice(0, 6).forEach(a => console.log(`  name="${a.name}" term="${a.term}" year=${a.year}`));
         break;
     }
 

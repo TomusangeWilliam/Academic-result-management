@@ -6,7 +6,7 @@ const Student = require('../models/Student');
 // @route   GET /api/supportive-grades/sheet
 exports.getGradingSheet = async (req, res) => {
     try {
-        const { classId, streamId, academicYear, semester } = req.query;
+        const { classId, streamId, academicYear, term } = req.query;
 
         // 1. Get Subjects for this Class
         const subjects = await SupportiveSubject.find({ class: classId });
@@ -21,7 +21,7 @@ exports.getGradingSheet = async (req, res) => {
         // 3. Get Existing Grades
         const grades = await SupportiveGrade.find({ 
             academicYear, 
-            semester,
+            term,
             student: { $in: students.map(s => s._id) }
         });
 
@@ -37,7 +37,7 @@ exports.getGradingSheet = async (req, res) => {
 // @route   POST /api/supportive-grades/save
 exports.saveGrades = async (req, res) => {
     try {
-        const { gradesData, academicYear, semester } = req.body; 
+        const { gradesData, academicYear, term } = req.body; 
         // gradesData example: [ { student: 'ID', subject: 'ID', score: 'A' }, ... ]
 
         const bulkOps = gradesData.map(item => ({
@@ -46,7 +46,7 @@ exports.saveGrades = async (req, res) => {
                     student: item.student, 
                     subject: item.subject,
                     academicYear, 
-                    semester 
+                    term 
                 },
                 update: { $set: { score: item.score } },
                 upsert: true // Create if doesn't exist

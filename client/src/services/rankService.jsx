@@ -7,10 +7,10 @@ const rankService = {
         try {
             const [s1, s2, overall] = await Promise.allSettled([
                 api.get(`${API_URL}/class-rank/${studentId}`, { 
-                    params: { classId, academicYear, semester: 'First Semester' } 
+                    params: { classId, academicYear, term: "TERM 1 2026" } 
                 }),
                 api.get(`${API_URL}/class-rank/${studentId}`, { 
-                    params: { classId, academicYear, semester: 'Second Semester' } 
+                    params: { classId, academicYear, term: "TERM 2 2026" } 
                 }),
                 api.get(`${API_URL}/overall-rank/${studentId}`, { 
                     params: { classId, academicYear } 

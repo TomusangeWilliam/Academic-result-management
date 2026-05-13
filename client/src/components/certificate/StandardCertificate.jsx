@@ -1,6 +1,6 @@
 import React from 'react';
 
-const StandardCertificate = ({ students, semester, awardDate, academicYear, grade }) => {
+const StandardCertificate = ({ students, term, awardDate, academicYear, grade }) => {
     return (
         <div className="flex flex-col items-center gap-10 bg-gray-200 py-10">
             <style>{`

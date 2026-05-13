@@ -27,15 +27,23 @@ const AssessmentTypesPage = () => {
   const [assessmentsLoading, setAssessmentsLoading] = useState(false);
   const [error, setError] = useState('');
   const [formData, setFormData] = useState({
-    name: '',
-    totalMarks: 10,
-    month: 'September',
-    semester: 'First Semester',
+    name: 'Mid Term',
+    totalMarks: 100,
+    month: 'February',
+    term: "TERM 1 2026",
     year: '',
   });
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [schoolConfig, setSchoolConfig] = useState(null);
+
+  const STANDARD_NAMES = [
+    "Beginning of Term",
+    "Mid Term",
+    "End of Term",
+    "Monthly Test",
+    "Mock Exam"
+  ];
 
   // --- Load Config ---
   useEffect(() => {
@@ -46,7 +54,7 @@ const AssessmentTypesPage = () => {
                 setSchoolConfig(res.data.data);
                 setFormData(prev => ({
                     ...prev,
-                    semester: res.data.data.currentSemester,
+                    term: res.data.data.currentTerm,
                     year: res.data.data.currentAcademicYear
                 }));
             }
@@ -70,19 +78,17 @@ const AssessmentTypesPage = () => {
       setError('');
       try {
         let subjectsList = [];
-        // Attempt to fetch subjects. Service worker handles cache if offline.
         if (currentUser.role === 'admin') {
           const res = await subjectService.getAllSubjects();
           subjectsList = res.data.data;
         } else if (currentUser.role === 'teacher') {
           const res = await userService.getProfile();
-          // Safety check for subjectsTaught
           subjectsList = res.data.subjectsTaught ? res.data.subjectsTaught.map(s => s.subject).filter(Boolean) : [];
         }
         setSubjects(subjectsList);
       } catch (err) {
         console.error("Error loading subjects:", err);
-        setError(t('error') || 'Failed to load subjects. Ensure you visited this page online once.');
+        setError(t('error') || 'Failed to load subjects.');
       } finally {
         setLoading(false);
       }
@@ -100,7 +106,7 @@ const AssessmentTypesPage = () => {
     return grouped;
   }, [subjects]);
 
-  // --- Fetch assessments (Online/Cache + Offline Local) ---
+  // --- Fetch assessments ---
   const fetchAssessments = async () => {
     if (!selectedSubject) return;
     setAssessmentsLoading(true);
@@ -109,32 +115,22 @@ const AssessmentTypesPage = () => {
     let onlineData = [];
     let offlineData = [];
 
-    // 1. Fetch from API (Service Worker handles caching if offline)
     try {
         const res = await assessmentTypeService.getBySubject(selectedSubject._id);
-        
-        // Validation: Ensure we actually got data (not an offline error object)
         if (res.data && Array.isArray(res.data.data)) {
             onlineData = res.data.data;
-        } else if (res.data && res.data.error) {
-             console.warn("Offline mode: API cache miss.");
-        } else {
-             console.warn("Invalid response format.");
         }
     } catch (err) {
-        // If Axios fails completely (no cache available), just ignore and show offline items
-        console.log("Using only offline items (No cache available).", err);
+        console.log("Using only offline items.", err);
     }
 
-    // 2. Fetch Locally Created Items (Pending Sync)
     const allLocal = offlineAssessmentService.getLocalAssessments();
     offlineData = allLocal.filter(a => a.subject === selectedSubject._id);
 
-    // 3. Merge & Sort with deduplication by name, month, and semester
     const combined = [...onlineData, ...offlineData];
     const uniqueMap = new Map();
     combined.forEach(item => {
-        const key = `${item.name}-${item.month}-${item.semester}`;
+        const key = `${item.name}-${item.month}-${item.term}`;
         if (!uniqueMap.has(key)) {
             uniqueMap.set(key, item);
         }
@@ -151,6 +147,17 @@ const AssessmentTypesPage = () => {
     fetchAssessments();
   }, [selectedSubject]);
 
+  // --- Duplicate Detection ---
+  const isDuplicate = useMemo(() => {
+    if (!formData.name || !formData.month || !formData.term) return false;
+    return assessmentTypes.some(at => 
+        at._id !== editingId &&
+        at.name.toLowerCase().includes(formData.name.toLowerCase().split(' ')[0]) && // Match "Mid" in "Mid Term"
+        at.month === formData.month &&
+        at.term === formData.term
+    );
+  }, [formData, assessmentTypes, editingId]);
+
   // --- Form Handlers ---
   const handleChange = (e) => {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
@@ -159,6 +166,7 @@ const AssessmentTypesPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!selectedSubject) return alert(t('select_class') || 'Select a subject first.');
+    if (isDuplicate) return alert("An assessment for this period already exists.");
     
     setSaving(true);
     setError('');
@@ -169,40 +177,16 @@ const AssessmentTypesPage = () => {
         classId: selectedSubject.class?._id || selectedSubject.class 
     };
 
-    // --- OFFLINE MODE WRITE ---
-    // Use navigator.onLine here because we CANNOT write to the server offline
     if (!navigator.onLine) {
-        if (editingId && !editingId.startsWith('TEMP_')) {
-            alert("Cannot edit online assessments while offline.");
-            setSaving(false);
-            return;
-        }
         try {
-            if (editingId && editingId.startsWith('TEMP_')) {
-                 offlineAssessmentService.removeLocalAssessment(editingId);
-                 offlineAssessmentService.addLocalAssessment({
-                    ...payload,
-                    subject: selectedSubject._id
-                 });
-                 if (!newAssess) {
-                      setSaving(false);
-                      return; 
-                  }
-                 alert("Offline assessment updated locally.");
-            } else {
-                offlineAssessmentService.addLocalAssessment({
-                    ...payload,
-                    subject: selectedSubject._id 
-                });
-                alert("📴 Offline: Assessment created locally! Use Sync when online.");
-            }
-            
+            offlineAssessmentService.addLocalAssessment({ ...payload, subject: selectedSubject._id });
+            alert("Offline: Assessment created locally!");
             await fetchAssessments(); 
             setFormData({ 
-                name: '', 
-                totalMarks: 10, 
-                month: 'September', 
-                semester: schoolConfig?.currentSemester || 'First Semester', 
+                name: 'Mid Term', 
+                totalMarks: 100, 
+                month: 'February', 
+                term: schoolConfig?.currentTerm || "TERM 1 2026", 
                 year: schoolConfig?.currentAcademicYear || '' 
             });
             setEditingId(null);
@@ -213,7 +197,6 @@ const AssessmentTypesPage = () => {
         return;
     }
 
-    // --- ONLINE MODE WRITE ---
     try {
       if (editingId && !editingId.startsWith('TEMP_')) {
         await assessmentTypeService.update(editingId, payload);
@@ -222,45 +205,27 @@ const AssessmentTypesPage = () => {
       }
       await fetchAssessments();
       setFormData({ 
-          name: '', 
-          totalMarks: 10, 
-          month: 'September', 
-          semester: schoolConfig?.currentSemester || 'First Semester', 
+          name: 'Mid Term', 
+          totalMarks: 100, 
+          month: 'February', 
+          term: schoolConfig?.currentTerm || "TERM 1 2026", 
           year: schoolConfig?.currentAcademicYear || '' 
       });
       setEditingId(null);
     } catch (err) {
-      const msg = err.response?.data?.message || 'Failed to save.';
-      if (msg.includes("already exists")) {
-          setError("⚠️ This Assessment already exists! Check the list below.");
-      } else {
-          setError(msg);
-      }
+      setError(err.response?.data?.message || 'Failed to save.');
     } finally {
       setSaving(false);
     }
   };
 
   const handleEdit = (assessment) => {
-    // Allow editing TEMP items if you implement updateLocalAssessment, 
-    // otherwise warn.
-    if (assessment._id.startsWith('TEMP_')) {
-        // Simple approach: Allow loading into form, but handle save as delete old + create new local
-        // Or for now, just restrict
-        if(!window.confirm("Editing offline items is limited. Do you want to delete and recreate?")) {
-             return;
-        }
-        offlineAssessmentService.removeLocalAssessment(assessment._id);
-        fetchAssessments();
-        // Continue to load form data so user can re-save
-    }
-
     setEditingId(assessment._id);
     setFormData({
       name: assessment.name,
       totalMarks: assessment.totalMarks,
       month: assessment.month,
-      semester: assessment.semester,
+      term: assessment.term,
       year: assessment.year,
     });
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -268,13 +233,6 @@ const AssessmentTypesPage = () => {
 
   const handleDelete = async (id) => {
     if (!window.confirm(t('delete') + '?')) return;
-    
-    if (id.startsWith('TEMP_')) {
-        offlineAssessmentService.removeLocalAssessment(id);
-        setAssessmentTypes(assessmentTypes.filter(at => at._id !== id));
-        return;
-    }
-
     try {
       await assessmentTypeService.remove(id);
       setAssessmentTypes(assessmentTypes.filter(at => at._id !== id));
@@ -286,110 +244,221 @@ const AssessmentTypesPage = () => {
   if (loading) return <p className="text-center mt-8">{t('loading')}</p>;
 
   return (
-    <div className="bg-white p-6 rounded-lg shadow-md">
-      <h2 className="text-2xl font-bold mb-4 text-gray-800">{t('manage_assessments')}</h2>
+    <div className="max-w-6xl mx-auto p-4 md:p-6 space-y-8">
+      {/* HEADER */}
+      <div className="flex justify-between items-center bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+        <div>
+          <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight">{t('manage_assessments')}</h2>
+          <p className="text-gray-500 mt-1">Configure grading rules and test periods for your classes.</p>
+        </div>
+        <div className="hidden md:block">
+            <span className="bg-pink-100 text-pink-700 px-4 py-2 rounded-full text-sm font-bold border border-pink-200">
+                School Standard: 100 Marks
+            </span>
+        </div>
+      </div>
       
-      {error && <div className="bg-red-100 text-red-700 p-3 mb-4 rounded border border-red-200">{error}</div>}
+      {error && (
+        <div className="bg-red-50 text-red-700 p-4 rounded-xl border border-red-200 flex items-center gap-3 animate-pulse">
+          <span className="text-2xl">⚠️</span>
+          <p className="font-semibold">{error}</p>
+        </div>
+      )}
 
       {/* SUBJECT SELECTION */}
-      <div className="space-y-4 mb-6">
-        {Object.keys(subjectsByGrade).length > 0 ? (
-          Object.keys(subjectsByGrade).sort().map(grade => (
-            <fieldset key={grade} className="border border-gray-200 p-4 rounded-lg">
-              <legend className="font-bold text-lg text-gray-700 px-2">{grade}</legend>
-              <div className="flex flex-wrap gap-2">
-                {subjectsByGrade[grade].map(sub => (
-                  <button
-                    key={sub._id}
-                    onClick={() => setSelectedSubject(sub)}
-                    className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
-                      selectedSubject?._id === sub._id
-                        ? 'bg-pink-500 text-white'
-                        : 'bg-gray-200 hover:bg-gray-300 text-gray-800'
-                    }`}
-                  >
-                    {sub.name}
-                  </button>
-                ))}
-              </div>
-            </fieldset>
-          ))
-        ) : (
-          <p>{t('no_data_select_filters')} (Connect online once to load)</p>
-        )}
-      </div>
-
-      {selectedSubject && (
-        <>
-          {/* FORM */}
-          <form onSubmit={handleSubmit} className="bg-gray-50 p-4 rounded-lg border mb-6">
-            <h3 className="text-xl font-bold mb-3 text-gray-700">
-              {editingId ? t('edit') : t('add')} {t('assessment')}
-            </h3>
-            <div className="flex flex-col gap-3">
-              <div className="flex flex-col md:flex-row gap-3">
-                <input type="text" name="name" value={formData.name} onChange={handleChange} placeholder={t('assessment') + " Name"} required className="border p-2 rounded w-full" />
-                <input type="number" name="totalMarks" value={formData.totalMarks} onChange={handleChange} min="1" placeholder={t('total')} required className="border p-2 rounded w-full" />
-              </div>
-              <div className="flex flex-col md:flex-row gap-3">
-                <select name="semester" value={formData.semester} onChange={handleChange} className="border p-2 rounded w-full">
-                  <option value="First Semester">{t('sem_1')}</option>
-                  <option value="Second Semester">{t('sem_2')}</option>
-                </select>
-                <select name="month" value={formData.month} onChange={handleChange} className="border p-2 rounded w-full">
-                  {MONTHS.map(m => <option key={m}>{m}</option>)}
-                </select>
-              </div>
-              <input type="number" name="year" value={formData.year} onChange={handleChange} placeholder={t('academic_year')} className="border p-2 rounded" />
-              
-              <button type="submit" disabled={saving} className={`col-span-2 py-2 rounded font-semibold text-white ${saving ? 'bg-green-300 cursor-not-allowed' : 'bg-green-500 hover:bg-green-600'}`}>
-                {saving ? t('loading') : editingId ? t('update') : t('add')}
-              </button>
-            </div>
-          </form>
-
-          {/* LIST */}
-          <div>
-            <h4 className="font-bold mb-3 text-gray-700">{t('overview')}</h4>
-            {assessmentsLoading ? <p>{t('loading')}</p> : (
-              assessmentTypes.length > 0 ? (
-                <ul className="space-y-2">
-                  {assessmentTypes.map(a => (
-                    <li key={a._id} className={`flex justify-between items-center bg-gray-50 p-2 rounded border-l-4 ${a._id.startsWith('TEMP_') ? 'border-l-red-500' : 'border-l-blue-500'}`}>
-                      
-                      <Link
-                        to="/grade-sheet"
-                        state={{
-                            assessmentType: a,
-                            subject: { 
-                                id: selectedSubject._id, 
-                                name: selectedSubject.name, 
-                                classId: selectedSubject.class?._id || selectedSubject.class 
-                            }
-                        }}
-                        className="flex-1 hover:underline flex flex-col"
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+        <div className="lg:col-span-1 space-y-4">
+          <h3 className="text-lg font-bold text-gray-700 mb-4 flex items-center gap-2">
+              <span className="bg-gray-200 p-1 rounded">📚</span> Select Class & Subject
+          </h3>
+          <div className="space-y-6 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
+            {Object.keys(subjectsByGrade).length > 0 ? (
+              Object.keys(subjectsByGrade).sort().map(grade => (
+                <div key={grade} className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+                  <h4 className="font-black text-xs uppercase tracking-widest text-gray-400 mb-3">{grade}</h4>
+                  <div className="flex flex-col gap-2">
+                    {subjectsByGrade[grade].map(sub => (
+                      <button
+                        key={sub._id}
+                        onClick={() => setSelectedSubject(sub)}
+                        className={`text-left px-4 py-3 rounded-xl text-sm font-bold transition-all duration-200 ${
+                          selectedSubject?._id === sub._id
+                            ? 'bg-pink-600 text-white shadow-lg shadow-pink-200 scale-[1.02]'
+                            : 'bg-gray-50 hover:bg-gray-100 text-gray-700 border border-gray-100'
+                        }`}
                       >
-                        <span className="text-gray-800 font-bold">{a.name} ({a.totalMarks})</span>
-                        <span className="text-xs text-gray-500">{a.month} | {a.semester} | {a.year}</span>
-                        {a._id.startsWith('TEMP_') && <span className="text-xs text-red-500 font-bold">[Offline - Pending Sync]</span>}
-                      </Link>
-
-                      <div className="flex gap-3 ml-4">
-                        {!a._id.startsWith('TEMP_') && (
-                            <button onClick={() => handleEdit(a)} className="text-blue-500 hover:text-blue-700 text-sm font-bold">{t('edit')}</button>
-                        )}
-                        <button onClick={() => handleDelete(a._id)} className="text-red-500 hover:text-red-700 text-sm font-bold">{t('delete')}</button>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              ) : <p className="text-gray-500">{t('no_data_select_filters')} (If offline, ensure you loaded this page once while online)</p>
+                        {sub.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))
+            ) : (
+              <p className="text-gray-400 text-sm">No subjects available.</p>
             )}
           </div>
-        </>
-      )}
+        </div>
+
+        {/* FORM & LIST */}
+        <div className="lg:col-span-3 space-y-6">
+          {selectedSubject ? (
+            <>
+              {/* FORM CARD */}
+              <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
+                <div className="bg-gray-900 p-6 text-white flex justify-between items-center">
+                  <div>
+                    <h3 className="text-xl font-bold">{editingId ? 'Edit' : 'New'} Assessment</h3>
+                    <p className="text-gray-400 text-sm">For {selectedSubject.name} | {selectedSubject.class?.className}</p>
+                  </div>
+                  {isDuplicate && (
+                    <span className="bg-red-500 text-white px-3 py-1 rounded-lg text-xs font-black animate-bounce">
+                        DUPLICATE DETECTED
+                    </span>
+                  )}
+                </div>
+
+                <form onSubmit={handleSubmit} className="p-8 space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                        <label className="text-sm font-bold text-gray-600 ml-1">Assessment Period</label>
+                        <select 
+                            name="name" 
+                            value={formData.name} 
+                            onChange={handleChange} 
+                            required 
+                            className="w-full bg-gray-50 border-2 border-gray-100 p-4 rounded-xl focus:border-pink-500 transition-colors font-bold text-gray-800"
+                        >
+                            {STANDARD_NAMES.map(n => <option key={n} value={n}>{n}</option>)}
+                        </select>
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="text-sm font-bold text-gray-600 ml-1">Total Marks</label>
+                        <div className="relative">
+                            <input 
+                                type="number" 
+                                name="totalMarks" 
+                                value={formData.totalMarks} 
+                                onChange={handleChange} 
+                                min="1" 
+                                required 
+                                className={`w-full bg-gray-50 border-2 p-4 rounded-xl focus:border-pink-500 transition-colors font-bold ${formData.totalMarks < 100 ? 'border-orange-300 text-orange-600' : 'border-gray-100 text-gray-800'}`}
+                            />
+                            {formData.totalMarks < 100 && (
+                                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-orange-500 uppercase">Below Standard</span>
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="text-sm font-bold text-gray-600 ml-1">Term</label>
+                        <select name="term" value={formData.term} onChange={handleChange} className="w-full bg-gray-50 border-2 border-gray-100 p-4 rounded-xl focus:border-pink-500 transition-colors font-bold text-gray-800">
+                            <option value="TERM 1 2026">Term 1 2026</option>
+                            <option value="TERM 2 2026">Term 2 2026</option>
+                            <option value="TERM 3 2026">Term 3 2026</option>
+                        </select>
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="text-sm font-bold text-gray-600 ml-1">Scheduled Month</label>
+                        <select name="month" value={formData.month} onChange={handleChange} className="w-full bg-gray-50 border-2 border-gray-100 p-4 rounded-xl focus:border-pink-500 transition-colors font-bold text-gray-800">
+                            {MONTHS.map(m => <option key={m}>{m}</option>)}
+                        </select>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-4 pt-4">
+                    <button 
+                        type="submit" 
+                        disabled={saving || isDuplicate} 
+                        className={`flex-1 py-4 rounded-2xl font-black text-white text-lg transition-all transform active:scale-95 shadow-lg ${
+                            saving || isDuplicate 
+                            ? 'bg-gray-300 cursor-not-allowed' 
+                            : 'bg-green-600 hover:bg-green-700 shadow-green-100'
+                        }`}
+                    >
+                        {saving ? 'Saving...' : editingId ? 'Update Assessment' : 'Confirm & Create'}
+                    </button>
+                    {editingId && (
+                        <button 
+                            type="button" 
+                            onClick={() => {
+                                setEditingId(null);
+                                setFormData({ name: 'Mid Term', totalMarks: 100, month: 'October', term: 'TERM 1 2026', year: schoolConfig?.currentAcademicYear || '' });
+                            }} 
+                            className="px-6 py-4 bg-gray-100 text-gray-600 rounded-2xl font-bold hover:bg-gray-200"
+                        >
+                            Cancel
+                        </button>
+                    )}
+                  </div>
+                </form>
+              </div>
+
+              {/* LIST CARD */}
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                <div className="flex justify-between items-center mb-6">
+                    <h4 className="text-xl font-extrabold text-gray-800 flex items-center gap-2">
+                        <span className="bg-pink-100 p-1 rounded">📋</span> Configured Assessments
+                    </h4>
+                    <span className="text-xs font-bold text-gray-400 bg-gray-50 px-3 py-1 rounded-full">
+                        {assessmentTypes.length} Total
+                    </span>
+                </div>
+
+                {assessmentsLoading ? (
+                    <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-pink-500"></div></div>
+                ) : assessmentTypes.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {assessmentTypes.map(a => (
+                      <div key={a._id} className="group relative bg-white p-5 rounded-2xl border-2 border-gray-50 hover:border-pink-200 hover:shadow-md transition-all">
+                        <div className="flex justify-between items-start mb-2">
+                            <div>
+                                <h5 className="font-black text-gray-900 group-hover:text-pink-600 transition-colors">{a.name}</h5>
+                                <p className="text-xs font-bold text-gray-400 uppercase">{a.month} | {a.term}</p>
+                            </div>
+                            <div className="bg-gray-900 text-white px-3 py-1 rounded-lg text-sm font-black">
+                                {a.totalMarks}
+                            </div>
+                        </div>
+                        
+                        <div className="mt-4 flex items-center justify-between border-t border-gray-50 pt-4">
+                            <Link
+                                to="/grade-sheet"
+                                state={{
+                                    assessmentType: a,
+                                    subject: { id: selectedSubject._id, name: selectedSubject.name, classId: selectedSubject.class?._id || selectedSubject.class }
+                                }}
+                                className="text-xs font-black text-pink-600 hover:text-pink-700 flex items-center gap-1"
+                            >
+                                GO TO GRADES →
+                            </Link>
+                            <div className="flex gap-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button onClick={() => handleEdit(a)} className="text-blue-500 hover:text-blue-700 font-bold text-xs uppercase tracking-wider">Edit</button>
+                                <button onClick={() => handleDelete(a._id)} className="text-red-500 hover:text-red-700 font-bold text-xs uppercase tracking-wider">Delete</button>
+                            </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-12 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200">
+                    <p className="text-gray-400 font-bold italic">No assessments created for this subject yet.</p>
+                  </div>
+                )}
+              </div>
+            </>
+          ) : (
+            <div className="bg-white rounded-3xl border-2 border-dashed border-gray-200 h-[500px] flex flex-col items-center justify-center text-center p-12">
+                <div className="bg-gray-50 w-24 h-24 rounded-full flex items-center justify-center text-4xl mb-6">👈</div>
+                <h3 className="text-2xl font-black text-gray-800 mb-2">Ready to Configure</h3>
+                <p className="text-gray-400 max-w-sm">Please select a subject from the left panel to manage its assessment periods and grading rules.</p>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 };
 
-export default AssessmentTypesPage;
+export default AssessmentTypesPage;

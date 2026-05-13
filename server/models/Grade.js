@@ -28,7 +28,7 @@ const gradeSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    semester: {
+    term: {
         type: String,
         required: true
     },
@@ -43,7 +43,7 @@ const gradeSchema = new mongoose.Schema({
 });
 
 gradeSchema.index(
- { student: 1, subject: 1, semester: 1, academicYear: 1, "assessments.assessmentType": 1 },
+ { student: 1, subject: 1, term: 1, academicYear: 1, "assessments.assessmentType": 1 },
  { unique: true }
 );
 

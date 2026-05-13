@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import semesterService from '../services/semesterService';
+import termService from '../services/termService';
 import { useTranslation } from 'react-i18next';
 
-const SemesterManagementPage = () => {
+const TermManagementPage = () => {
     const { t } = useTranslation();
-    const [semesters, setSemesters] = useState([]);
+    const [terms, setTerms] = useState([]);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [formData, setFormData] = useState({ name: '', startDate: '', endDate: '' });
@@ -12,15 +12,15 @@ const SemesterManagementPage = () => {
     const [message, setMessage] = useState({ type: '', text: '' });
 
     useEffect(() => {
-        fetchSemesters();
+        fetchTerms();
     }, []);
 
-    const fetchSemesters = async () => {
+    const fetchTerms = async () => {
         try {
-            const res = await semesterService.getSemesters();
-            setSemesters(res.data.data);
+            const res = await termService.getTerms();
+            setTerms(res.data.data);
         } catch (err) {
-            console.error("Error fetching semesters:", err);
+            console.error("Error fetching terms:", err);
         } finally {
             setLoading(false);
         }
@@ -36,15 +36,15 @@ const SemesterManagementPage = () => {
         setMessage({ type: '', text: '' });
         try {
             if (editingId) {
-                await semesterService.updateSemester(editingId, formData);
-                setMessage({ type: 'success', text: 'Semester updated successfully!' });
+                await termService.updateTerm(editingId, formData);
+                setMessage({ type: 'success', text: 'Term updated successfully!' });
             } else {
-                await semesterService.createSemester(formData);
-                setMessage({ type: 'success', text: 'Semester created successfully!' });
+                await termService.createTerm(formData);
+                setMessage({ type: 'success', text: 'Term created successfully!' });
             }
             setFormData({ name: '', startDate: '', endDate: '' });
             setEditingId(null);
-            fetchSemesters();
+            fetchTerms();
         } catch (err) {
             setMessage({ type: 'error', text: err.response?.data?.message || 'Operation failed.' });
         } finally {
@@ -52,24 +52,24 @@ const SemesterManagementPage = () => {
         }
     };
 
-    const handleEdit = (semester) => {
-        setEditingId(semester._id);
+    const handleEdit = (term) => {
+        setEditingId(term._id);
         setFormData({
-            name: semester.name,
-            startDate: semester.startDate ? semester.startDate.split('T')[0] : '',
-            endDate: semester.endDate ? semester.endDate.split('T')[0] : ''
+            name: term.name,
+            startDate: term.startDate ? term.startDate.split('T')[0] : '',
+            endDate: term.endDate ? term.endDate.split('T')[0] : ''
         });
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
     const handleDelete = async (id) => {
-        if (!window.confirm('Are you sure you want to delete this semester?')) return;
+        if (!window.confirm('Are you sure you want to delete this term?')) return;
         try {
-            await semesterService.deleteSemester(id);
-            setMessage({ type: 'success', text: 'Semester deleted successfully!' });
-            fetchSemesters();
+            await termService.deleteTerm(id);
+            setMessage({ type: 'success', text: 'Term deleted successfully!' });
+            fetchTerms();
         } catch (err) {
-            setMessage({ type: 'error', text: 'Failed to delete semester.' });
+            setMessage({ type: 'error', text: 'Failed to delete term.' });
         }
     };
 
@@ -152,7 +152,7 @@ const SemesterManagementPage = () => {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-50">
-                        {semesters.map((sem) => (
+                        {terms.map((sem) => (
                             <tr key={sem._id} className="hover:bg-gray-50/50 transition-colors">
                                 <td className="px-6 py-4 whitespace-nowrap">
                                     <span className="text-lg font-bold text-gray-700">{sem.name}</span>
@@ -178,7 +178,7 @@ const SemesterManagementPage = () => {
                                 </td>
                             </tr>
                         ))}
-                        {semesters.length === 0 && (
+                        {terms.length === 0 && (
                             <tr>
                                 <td colSpan="3" className="px-6 py-12 text-center text-gray-400 font-medium italic">
                                     No terms found. Add your first one above!
@@ -192,4 +192,4 @@ const SemesterManagementPage = () => {
     );
 };
 
-export default SemesterManagementPage;
+export default TermManagementPage;

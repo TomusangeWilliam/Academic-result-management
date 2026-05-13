@@ -15,7 +15,7 @@ const AllSubjectAnalytics = () => {
     classId: '',
     streamId: 'all',
     assessmentName: '',
-    semester: 'First Semester',
+    term: "TERM 1 2026",
     academicYear: '2026'
   });
 
@@ -195,9 +195,9 @@ const AllSubjectAnalytics = () => {
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4 flex-1">
                   <input type="text" name="assessmentName" value={filters.assessmentName} onChange={handleChange} placeholder={t('assessment')} className="block w-full rounded-md border-gray-300 shadow-sm p-2 border" />
-                  <select name="semester" value={filters.semester} onChange={handleChange} className="block w-full rounded-md border-gray-300 shadow-sm p-2 border">
-                    <option value="First Semester">{t('sem_1')}</option>
-                    <option value="Second Semester">{t('sem_2')}</option>
+                  <select name="term" value={filters.term} onChange={handleChange} className="block w-full rounded-md border-gray-300 shadow-sm p-2 border">
+                    <option value="TERM 1 2026">{t('sem_1')}</option>
+                    <option value="TERM 2 2026">{t('sem_2')}</option>
                   </select>
                   <input type="text" name="academicYear" value={filters.academicYear} onChange={handleChange} placeholder={t('academic_year')} className="block w-full rounded-md border-gray-300 shadow-sm p-2 border" />
                   

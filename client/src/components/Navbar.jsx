@@ -158,6 +158,12 @@ const Navbar = ({ isOpen, setIsOpen }) => {
                   <NavLink to="/subject-performance" className={dropdownLinkClass} onClick={closeMenu}>
                     {t('subject_performance')}
                   </NavLink>
+                  <NavLink to="/class-performance" className={dropdownLinkClass} onClick={closeMenu}>
+                    {t('class_performance') || 'Class Performance'}
+                  </NavLink>
+                  <NavLink to="/cumulative-performance" className={dropdownLinkClass} onClick={closeMenu}>
+                    {t('cumulative_performance') || 'Cumulative Performance'}
+                  </NavLink>
                   <NavLink to="/analytics" className={dropdownLinkClass} onClick={closeMenu}>
                     {t('subject_detail')}
                   </NavLink>
@@ -187,7 +193,7 @@ const Navbar = ({ isOpen, setIsOpen }) => {
                     <NavLink to="/settings" className={dropdownLinkClass} onClick={closeMenu}>
                         ⚙️ {t('school_settings') || 'School Settings'}
                     </NavLink>
-                    <NavLink to="/admin/semesters" className={dropdownLinkClass} onClick={closeMenu}>
+                    <NavLink to="/admin/terms" className={dropdownLinkClass} onClick={closeMenu}>
                         🗓️ {t('manage_terms') || 'Manage Terms'}
                     </NavLink>
                     <NavLink to="/admin/upload-pdf" className={dropdownLinkClass} onClick={closeMenu}>

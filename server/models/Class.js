@@ -1,18 +1,29 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
-const classSchema = new mongoose.Schema({
-    className: { 
-        type: String, 
-        required: true, 
-        trim: true,
-        unique: true
+const classSchema = new mongoose.Schema(
+  {
+    className: {
+      type: String,
+      required: true,
+      trim: true,
+      unique: true,
     },
-    schoolLevel: { 
-        type: String, 
-        required: true,
-        enum: ['kg', 'primary', 'High School', 'all'],
-        default: 'primary'
-    }
-}, { timestamps: true });
+    schoolLevel: {
+      type: String,
+      required: true,
+      enum: ["kg", "primary", "High School", "all"],
+      default: "primary",
+    },
+  },
+  {
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
+  },
+);
 
-module.exports = mongoose.model('Class', classSchema);
+classSchema.virtual("name").get(function () {
+  return this.className;
+});
+
+module.exports = mongoose.model("Class", classSchema);

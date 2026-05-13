@@ -220,7 +220,7 @@ const SyncStatus = () => {
                                                     </div>
                                                     
                                                     <div className="font-medium text-gray-700 text-xs">
-                                                        {g.payload.academicYear} | {g.payload.semester}
+                                                        {g.payload.academicYear} | {g.payload.term}
                                                     </div>
                                                     
                                                     <div className="text-xs text-gray-500">

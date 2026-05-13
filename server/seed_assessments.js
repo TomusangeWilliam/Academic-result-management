@@ -24,7 +24,7 @@ async function seedAssessments() {
             process.exit(1);
         }
 
-        const { currentSemester, currentAcademicYear } = config;
+        const { currentTerm, currentAcademicYear } = config;
         const subjects = await Subject.find();
 
         for (const subject of subjects) {
@@ -32,7 +32,7 @@ async function seedAssessments() {
                 const existing = await AssessmentType.findOne({
                     name: at.name,
                     subject: subject._id,
-                    semester: currentSemester,
+                    term: currentTerm,
                     year: currentAcademicYear
                 });
 
@@ -43,7 +43,7 @@ async function seedAssessments() {
                         subject: subject._id,
                         class: subject.class,
                         month: at.month,
-                        semester: currentSemester,
+                        term: currentTerm,
                         year: currentAcademicYear
                     });
                     console.log(`- Created ${at.name} for ${subject.name}`);

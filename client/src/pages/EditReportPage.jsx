@@ -98,13 +98,13 @@ const EditReportPage = () => {
                         {currentUser?.role === 'admin' ? (
                             <>
                                 <select 
-                                    name="semester"
-                                    value={reportData.semester} 
+                                    name="term"
+                                    value={reportData.term} 
                                     onChange={handleChange}
                                     className="border p-1 rounded font-bold text-blue-900 text-sm"
                                 >
-                                    <option value="First Semester">{t('sem_1')}</option>
-                                    <option value="Second Semester">{t('sem_2')}</option>
+                                    <option value="TERM 1 2026">{t('sem_1')}</option>
+                                    <option value="TERM 2 2026">{t('sem_2')}</option>
                                 </select>
                                 <input 
                                     type="text" 
@@ -116,7 +116,7 @@ const EditReportPage = () => {
                             </>
                         ) : (
                             <p className="text-sm text-gray-500">
-                                {reportData.semester} | {reportData.academicYear}
+                                {reportData.term} | {reportData.academicYear}
                             </p>
                         )}
                     </div>

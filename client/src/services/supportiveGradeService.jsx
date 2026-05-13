@@ -1,9 +1,9 @@
 import api from './api';
 const API_URL = '/supportive-grades';
 
-const getSheet = (gradeLevel, academicYear, semester) => {
+const getSheet = (gradeLevel, academicYear, term) => {
         return api.get(`${API_URL}/sheet`, { 
-            params: { gradeLevel, academicYear, semester } 
+            params: { gradeLevel, academicYear, term } 
         });
     }
 

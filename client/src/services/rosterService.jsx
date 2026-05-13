@@ -1,9 +1,9 @@
 // src/services/rosterService.js
 import api from './api';
 
-const getSubjectRoster = ({ classId, streamId, subjectId, semester, academicYear }) => {
+const getSubjectRoster = ({ classId, streamId, subjectId, term, academicYear }) => {
     return api.get('/rosters/subject-details', {
-        params: { classId, streamId, subjectId, semester, academicYear }
+        params: { classId, streamId, subjectId, term, academicYear }
     });
 };
 

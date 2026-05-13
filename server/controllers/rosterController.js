@@ -61,7 +61,7 @@ exports.generateRoster = async (req, res) => {
 
         const studentIds = students.map(s => s._id);
 
-        // ── Grades (all semesters/terms) ──────────────────────────────────────
+        // ── Grades (all terms/terms) ──────────────────────────────────────
         const [academicGrades, supportiveGrades] = await Promise.all([
             Grade.find({ student: { $in: studentIds }, academicYear })
                 .populate('subject', 'name')
@@ -82,7 +82,7 @@ exports.generateRoster = async (req, res) => {
             academicSubjects.forEach(subject => {
                 subjectScores[subject.name] = { BOT: null, MT: null, EOT: null };
 
-                // Find all grade docs for this student + subject (may span multiple semesters)
+                // Find all grade docs for this student + subject (may span multiple terms)
                 const gradeDocsForSubject = academicGrades.filter(g =>
                     g.student.equals(student._id) &&
                     g.subject?._id.equals(subject._id)
@@ -203,27 +203,28 @@ exports.generateRoster = async (req, res) => {
     }
 };
 // @desc    Generate a detailed roster for a single subject
-// @route   GET /api/rosters/subject-details?gradeLevel=...&subjectId=...&semester=...&academicYear=...
+// @route   GET /api/rosters/subject-details?gradeLevel=...&subjectId=...&term=...&academicYear=...
 // in backend/controllers/rosterController.js
 
 exports.generateSubjectRoster = async (req, res) => {
-    const { classId, streamId, subjectId, semester, academicYear } = req.query;
+    const { classId, streamId, subjectId, term, academicYear } = req.query;
 
     // 1. Validation
-    if (!classId || !subjectId || !semester || !academicYear) {
-        return res.status(400).json({ message: 'Class, Subject, Semester, and Year are required.' });
+    if (!classId || !subjectId || !term || !academicYear) {
+        return res.status(400).json({ message: 'Class, Subject, Term, and Year are required.' });
     }
 
-    // 2. Define Semester Logic
+    // 2. Define Term Logic
     // Adjust these arrays to match your school's actual academic calendar
     const SEMESTER_CONFIG = {
-        "First Semester": ["September", "October", "November", "December", "January"],
-        "Second Semester": ["February", "March", "April", "May", "June"]
+        "TERM 1 2026": ["September", "October", "November", "December", "January"],
+        "TERM 2 2026": ["February", "March", "April", "May", "June"],
+        "TERM 3 2026": ["July", "August", "September"]
     };
 
-    const validMonths = SEMESTER_CONFIG[semester];
+    const validMonths = SEMESTER_CONFIG[term];
     if (!validMonths) {
-        return res.status(400).json({ message: 'Invalid semester provided.' });
+        return res.status(400).json({ message: 'Invalid term provided.' });
     }
 
     try {
@@ -236,10 +237,10 @@ exports.generateSubjectRoster = async (req, res) => {
         });
 
         if (allAssessmentsForSubject.length === 0) {
-            return res.status(404).json({ message: 'No assessment types found for this semester.' });
+            return res.status(404).json({ message: 'No assessment types found for this term.' });
         }
 
-        // 4. Group and Sort Months based on Semester Order
+        // 4. Group and Sort Months based on Term Order
         const assessmentTypesByMonth = {};
         allAssessmentsForSubject.forEach(at => {
             if (!assessmentTypesByMonth[at.month]) assessmentTypesByMonth[at.month] = [];
@@ -262,7 +263,7 @@ exports.generateSubjectRoster = async (req, res) => {
         const grades = await Grade.find({ 
             student: { $in: studentIds }, 
             subject: subjectId, 
-            semester, 
+            term, 
             academicYear 
         }).populate('assessments.assessmentType');
 
@@ -299,7 +300,7 @@ exports.generateSubjectRoster = async (req, res) => {
 
         // 9. Send Response
         res.status(200).json({
-            semester: semester,
+            term: term,
             sortedMonths: sortedMonths,
             assessmentsByMonth: assessmentTypesByMonth,
             roster: rosterData

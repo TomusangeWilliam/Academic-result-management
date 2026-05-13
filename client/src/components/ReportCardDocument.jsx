@@ -6,8 +6,8 @@ const ReportCardDocument = ({ reportData, schoolInfoData, reportType = 'year' })
     // --- DATA TRANSFORMATION & SORTING ---
     const processedGrades = useMemo(() => {
         if (!reportData || !reportData.grades) return [];
-        const sem1Grades = reportData.grades.filter(g => g.semester === 'First Semester');
-        const sem2Grades = reportData.grades.filter(g => g.semester === 'Second Semester');
+        const sem1Grades = reportData.grades.filter(g => g.term === "TERM 1 2026");
+        const sem2Grades = reportData.grades.filter(g => g.term === "TERM 2 2026");
 
         // Get unique subject names
         const allSubjects = new Set([
@@ -29,8 +29,8 @@ const ReportCardDocument = ({ reportData, schoolInfoData, reportType = 'year' })
 
             return {
                 subjectName: subjectName,
-                firstSemester: s1 !== null ? s1 : '-',
-                secondSemester: s2 !== null ? s2 : '-',
+                firstTerm: s1 !== null ? s1 : '-',
+                secondTerm: s2 !== null ? s2 : '-',
                 average: average
             };
         });
@@ -76,8 +76,8 @@ const ReportCardDocument = ({ reportData, schoolInfoData, reportType = 'year' })
     // Safe Destructuring (Updated with your JSON keys)
     const { 
         studentInfo = {}, 
-        semester1 = {}, 
-        semester2 = {}, 
+        term1 = {}, 
+        term2 = {}, 
         finalAverage = '-', 
         rank = {}, // This comes from the parent component merging it
         behavior = {},
@@ -87,14 +87,14 @@ const ReportCardDocument = ({ reportData, schoolInfoData, reportType = 'year' })
 
     // Helper for Totals
     const currentTotal = () => {
-        if (reportType === 'sem1') return semester1?.sum;
-        if (reportType === 'sem2') return semester2?.sum;
-        return (semester1?.sum || 0) + (semester2?.sum.toFixed(2) || 0);
+        if (reportType === 'sem1') return term1?.sum;
+        if (reportType === 'sem2') return term2?.sum;
+        return (term1?.sum || 0) + (term2?.sum.toFixed(2) || 0);
     };
 
     const currentAvg = () => {
-        if (reportType === 'sem1') return semester1?.avg;
-        if (reportType === 'sem2') return semester2?.avg;
+        if (reportType === 'sem1') return term1?.avg;
+        if (reportType === 'sem2') return term2?.avg;
         return finalAverage;
     };
 
@@ -213,19 +213,19 @@ const ReportCardDocument = ({ reportData, schoolInfoData, reportType = 'year' })
                                         <tr key={i} className="border-b border-gray-100 hover:bg-cyan-50">
                                             <td className="py-1.5 px-3 font-bold text-slate-700">{r.subjectName}</td>
                                             
-                                            {/* Semester 1 */}
+                                            {/* Term 1 */}
                                             {(reportType === 'sem1' || reportType === 'year') && (
                                                 <td className="text-center text-slate-700 font-medium border-l border-gray-100">
                                                     {/* Safe check: is it a number? */}
-                                                    {typeof r.firstSemester === 'number' ? r.firstSemester.toFixed(2) : (r.firstSemester || '-')}
+                                                    {typeof r.firstTerm === 'number' ? r.firstTerm.toFixed(2) : (r.firstTerm || '-')}
                                                 </td>
                                             )}
 
-                                            {/* Semester 2 */}
+                                            {/* Term 2 */}
                                             {(reportType === 'sem2' || reportType === 'year') && (
                                                 <td className="text-center text-slate-700 font-medium border-l border-gray-100">
                                                     {/* Safe check: is it a number? */}
-                                                    {typeof r.secondSemester === 'number' ? r.secondSemester.toFixed(2) : (r.secondSemester || '-')}
+                                                    {typeof r.secondTerm === 'number' ? r.secondTerm.toFixed(2) : (r.secondTerm || '-')}
                                                 </td>
                                             )}
 
@@ -262,15 +262,15 @@ const ReportCardDocument = ({ reportData, schoolInfoData, reportType = 'year' })
                                     {/* Total */}
                                     <tr className="bg-gray-50 border-t-2 border-slate-200 font-bold text-slate-800">
                                         <td className="py-2 px-3 text-right uppercase text-[9px] tracking-wider">Total Score</td>
-                                        {(reportType === 'sem1' || reportType === 'year') && <td className="text-center border-l border-gray-200">{semester1?.sum.toFixed(2) || 0}</td>}
-                                        {(reportType === 'sem2' || reportType === 'year') && <td className="text-center border-l border-gray-200">{semester2?.sum.toFixed(2) || 0}</td>}
+                                        {(reportType === 'sem1' || reportType === 'year') && <td className="text-center border-l border-gray-200">{term1?.sum.toFixed(2) || 0}</td>}
+                                        {(reportType === 'sem2' || reportType === 'year') && <td className="text-center border-l border-gray-200">{term2?.sum.toFixed(2) || 0}</td>}
                                         {reportType === 'year' && <td className="text-center border-l border-gray-200 text-[#0f172a]">{currentTotal()}</td>}
                                     </tr>
                                     {/* Average */}
                                     <tr className="bg-gray-50 border-t border-gray-200 font-bold text-slate-800">
                                         <td className="py-2 px-3 text-right uppercase text-[9px] tracking-wider">Average</td>
-                                        {(reportType === 'sem1' || reportType === 'year') && <td className="text-center border-l border-gray-200">{semester1?.avg || 0}</td>}
-                                        {(reportType === 'sem2' || reportType === 'year') && <td className="text-center border-l border-gray-200">{semester2?.avg || 0}</td>}
+                                        {(reportType === 'sem1' || reportType === 'year') && <td className="text-center border-l border-gray-200">{term1?.avg || 0}</td>}
+                                        {(reportType === 'sem2' || reportType === 'year') && <td className="text-center border-l border-gray-200">{term2?.avg || 0}</td>}
                                         {reportType === 'year' && <td className="text-center border-l border-gray-200 text-[#0f172a]">{currentAvg()}</td>}
                                     </tr>
                                     {/* Rank */}

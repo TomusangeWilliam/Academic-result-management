@@ -5,9 +5,9 @@ const globalConfigSchema = new mongoose.Schema({
         type: String,
         default: '2026'
     },
-    currentSemester: {
+    currentTerm: {
         type: String,
-        default: 'First Semester'
+        default: "TERM 1 2026"
     },
     schoolName: {
         type: String,

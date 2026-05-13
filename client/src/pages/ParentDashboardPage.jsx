@@ -108,7 +108,7 @@ const ParentDashboardPage = () => {
     const completedQuizzes = availableQuizzes.filter(q => quizStatuses[q._id] && quizStatuses[q._id].hasTaken);
     // --- ANALYTICS ENGINE ---
     const analyticsData = useMemo(() => {
-        if (!grades.length) return { overall: null, semesters: {} };
+        if (!grades.length) return { overall: null, terms: {} };
 
         const processGrades = (gradeList) => {
             if (!gradeList || gradeList.length === 0) return null;
@@ -195,17 +195,17 @@ const ParentDashboardPage = () => {
 
         const overall = processGrades(grades);
         const semGroup = grades.reduce((acc, g) => {
-            acc[g.semester] = acc[g.semester] || [];
-            acc[g.semester].push(g);
+            acc[g.term] = acc[g.term] || [];
+            acc[g.term].push(g);
             return acc;
         }, {});
 
-        const semesters = {};
+        const terms = {};
         Object.keys(semGroup).forEach(sem => {
-            semesters[sem] = processGrades(semGroup[sem]);
+            terms[sem] = processGrades(semGroup[sem]);
         });
 
-        return { overall, semesters };
+        return { overall, terms };
     }, [grades, t]);
     
 
@@ -265,7 +265,7 @@ const ParentDashboardPage = () => {
     if (loading) return <div className="flex justify-center items-center h-screen font-bold text-slate-400">{t('loading')}...</div>;
     if (error) return <div className="p-10 text-center text-red-500 bg-red-50 h-screen flex flex-col items-center justify-center">{error}</div>;
 
-    const { overall, semesters } = analyticsData;
+    const { overall, terms } = analyticsData;
 
     return (
         <div className="p-4 md:p-8 bg-slate-50 min-h-screen font-sans print:bg-white print:p-0">
@@ -347,7 +347,7 @@ const ParentDashboardPage = () => {
                     📊 {t('overview_analytics') || 'Overview Analytics'}
                 </button>
                 
-                {Object.keys(semesters).map(sem => (
+                {Object.keys(terms).map(sem => (
                     <button
                         key={sem}
                         onClick={() => setActiveMainTab(sem)}
@@ -357,7 +357,7 @@ const ParentDashboardPage = () => {
                             : 'border-transparent text-slate-400 hover:text-slate-600 hover:border-slate-300'
                         }`}
                     >
-                        📝 {sem === 'First Semester' || sem === 'Term 1' ? t('sem_1') : sem === 'Second Semester' || sem === 'Term 2' ? t('sem_2') : sem} Details
+                        📝 {sem === "TERM 1 2026" || sem === 'Term 1' ? t('sem_1') : sem === "TERM 2 2026" || sem === 'Term 2' ? t('sem_2') : sem} Details
                     </button>
                 ))}
             </div>
@@ -380,7 +380,7 @@ const ParentDashboardPage = () => {
                             >
                                 🌐 {t('overall_year') || 'Overall Year'}
                             </button>
-                            {Object.keys(semesters).map(sem => (
+                            {Object.keys(terms).map(sem => (
                                 <button
                                     key={sem}
                                     onClick={() => setActiveAnalyticsTab(sem)}
@@ -390,14 +390,14 @@ const ParentDashboardPage = () => {
                                         : 'text-slate-500 hover:text-slate-700'
                                     }`}
                                 >
-                                    📅 {sem === 'First Semester' || sem === 'Term 1' ? t('sem_1') : sem === 'Second Semester' || sem === 'Term 2' ? t('sem_2') : sem}
+                                    📅 {sem === "TERM 1 2026" || sem === 'Term 1' ? t('sem_1') : sem === "TERM 2 2026" || sem === 'Term 2' ? t('sem_2') : sem}
                                 </button>
                             ))}
                         </div>
 
                         {/* RENDER THE SELECTED ANALYTICS DATA */}
                         {activeAnalyticsTab === 'overall' && renderAnalyticsBlock(overall)}
-                        {Object.entries(semesters).map(([semName, semData]) => (
+                        {Object.entries(terms).map(([semName, semData]) => (
                             activeAnalyticsTab === semName ? <div key={semName}>{renderAnalyticsBlock(semData)}</div> : null
                         ))}
 
@@ -406,15 +406,15 @@ const ParentDashboardPage = () => {
 
 
                 {/* 2. SPECIFIC SEMESTER DETAILS (Just the Subject Breakdown Grades) */}
-                {Object.entries(semesters).map(([semesterName, semData]) => {
-                    if (activeMainTab !== semesterName) return null;
+                {Object.entries(terms).map(([termName, semData]) => {
+                    if (activeMainTab !== termName) return null;
 
                     return (
-                        <div key={semesterName} className="animate-fade-in mb-12">
-                            {/* Semester Header Info */}
+                        <div key={termName} className="animate-fade-in mb-12">
+                            {/* Term Header Info */}
                             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 bg-slate-800 text-white p-4 rounded-xl shadow-md gap-3">
                                 <h2 className="text-xl font-black uppercase tracking-tight">
-                                    {semesterName === 'First Semester' || semesterName === 'Term 1' ? t('sem_1') : semesterName === 'Second Semester' || semesterName === 'Term 2' ? t('sem_2') : semesterName} Grades
+                                    {termName === "TERM 1 2026" || termName === 'Term 1' ? t('sem_1') : termName === "TERM 2 2026" || termName === 'Term 2' ? t('sem_2') : termName} Grades
                                 </h2>
                                 <div className="flex flex-col md:flex-row gap-3">
                                     <div className="bg-emerald-500 text-white px-4 py-1.5 rounded-lg shadow-sm">
@@ -423,7 +423,7 @@ const ParentDashboardPage = () => {
                                     </div>
                                     <div className="bg-indigo-500 text-white px-4 py-1.5 rounded-lg shadow-sm">
                                         <span className="text-xs uppercase font-bold mr-2">{t('sem_rank') || 'Sem Rank'}:</span>
-                                        <span className="text-lg font-black">{semesterName === 'First Semester' ? ranks.sem1 : ranks.sem2}</span>
+                                        <span className="text-lg font-black">{termName === "TERM 1 2026" ? ranks.sem1 : ranks.sem2}</span>
                                     </div>
                                 </div>
                             </div>
@@ -464,7 +464,7 @@ const ParentDashboardPage = () => {
                             {/* Teacher Comment */}
                             <div className="mt-8 p-6 bg-amber-50 border-l-4 border-amber-400 rounded-r-xl shadow-sm">
                                 <p className="text-xs uppercase font-bold text-amber-700 mb-2">{t('teacher_comment')}</p>
-                                <p className="text-base text-amber-900 italic font-medium">"{reports.find(r => r.semester === semesterName)?.teacherComment || t('no_comment_available') || "No comment available."}"</p>
+                                <p className="text-base text-amber-900 italic font-medium">"{reports.find(r => r.term === termName)?.teacherComment || t('no_comment_available') || "No comment available."}"</p>
                             </div>
                         </div>
                     );

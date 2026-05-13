@@ -29,15 +29,15 @@ const findRankInList = (sortedList, targetStudentId, scoreField) => {
 };
 
 // 1. SEMESTER RANK (Based on Total Score)
-exports.getSemesterRank = async (req, res) => {
+exports.getTermRank = async (req, res) => {
     const { studentId } = req.params;
-    const { academicYear, semester, classId } = req.query;
+    const { academicYear, term, classId } = req.query;
     
     // Handle URL-encoded parameters
-    const decodedSemester = semester ? semester.replace(/\+/g, ' ') : '';
+    const decodedTerm = term ? term.replace(/\+/g, ' ') : '';
     const decodedClassId = classId ? classId.replace(/\+/g, ' ') : '';
 
-    if (!academicYear || !semester || !classId) {
+    if (!academicYear || !term || !classId) {
         return res.status(400).json({ message: 'Missing fields' });
     }
 
@@ -52,7 +52,7 @@ exports.getSemesterRank = async (req, res) => {
                     'studentInfo.class': new mongoose.Types.ObjectId(decodedClassId),
                     'studentInfo.status': 'Active',
                     academicYear: academicYear,
-                    semester: decodedSemester
+                    term: decodedTerm
                 }
             },
             {

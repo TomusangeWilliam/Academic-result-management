@@ -8,7 +8,7 @@ const GradingScale = require('../models/GradingScale')
 
 const getGradeFromScore = async (score, className) => {
     const ranges = [
-        { grade: '1', minScore: 90, maxScore: 100 },
+        { grade: 'D1', minScore: 90, maxScore: 100 },
         { grade: 'D2', minScore: 80, maxScore: 89 },
         { grade: 'C3', minScore: 70, maxScore: 79 },
         { grade: 'C4', minScore: 60, maxScore: 69 },
@@ -45,8 +45,8 @@ const mergeDuplicateGrades = (rawGrades, currentClassId) => {
         // Clean assessments (remove nulls)
         const cleanAssessments = (grade.assessments || []).filter(a => a.assessmentType != null);
         
-        // Key: "First Semester-Mathematics"
-        const key = `${grade.semester}-${grade.subject.name.trim().toLowerCase()}`;
+        // Key: "First Term-Mathematics"
+        const key = `${grade.term}-${grade.subject.name.trim().toLowerCase()}`;
 
         if (gradeMap.has(key)) {
             const existing = gradeMap.get(key);
@@ -95,8 +95,8 @@ const processSupportiveGrades = (supportiveDocs) => {
         }
 
         const entry = map.get(subjectName);
-        if (doc.semester === 'First Semester') entry.sem1 = doc.score;
-        else if (doc.semester === 'Second Semester') entry.sem2 = doc.score;
+        if (doc.term === "TERM 1 2026") entry.sem1 = doc.score;
+        else if (doc.term === "TERM 2 2026") entry.sem2 = doc.score;
     });
 
     return Array.from(map.values());
@@ -105,13 +105,13 @@ const processSupportiveGrades = (supportiveDocs) => {
 /**
  * HELPER 3: CALCULATE STATS (Sum & Average for Academic Only)
  */
-const calculateStats = (cleanedGrades, semesterName) => {
-    const semesterGrades = cleanedGrades.filter(g => g.semester === semesterName);
+const calculateStats = (cleanedGrades, termName) => {
+    const termGrades = cleanedGrades.filter(g => g.term === termName);
     
-    if (semesterGrades.length === 0) return { sum: 0, avg: 0 };
+    if (termGrades.length === 0) return { sum: 0, avg: 0 };
 
-    const totalScore = semesterGrades.reduce((acc, curr) => acc + (curr.finalScore || 0), 0);
-    const average = totalScore / semesterGrades.length;
+    const totalScore = termGrades.reduce((acc, curr) => acc + (curr.finalScore || 0), 0);
+    const average = totalScore / termGrades.length;
 
     return { 
         sum: parseFloat(totalScore.toFixed(2)), 
@@ -123,8 +123,8 @@ const calculateStats = (cleanedGrades, semesterName) => {
  * HELPER 4: PROCESS BEHAVIOR TRAITS
  */
 const processBehaviorData = (behaviorDocs) => {
-  const sem1 = behaviorDocs.find(b => b.semester === 'First Semester');
-  const sem2 = behaviorDocs.find(b => b.semester === 'Second Semester');
+  const sem1 = behaviorDocs.find(b => b.term === "TERM 1 2026");
+  const sem2 = behaviorDocs.find(b => b.term === "TERM 2 2026");
 
   const standardTraits = [
       "Punctuality", "Responsibility",
@@ -153,8 +153,8 @@ const processBehaviorData = (behaviorDocs) => {
  * HELPER 5: EXTRACT CONDUCT & ABSENT
  */
 const processAttendanceAndConduct = (behaviorDocs) => {
-    const sem1 = behaviorDocs.find(b => b.semester === 'First Semester');
-    const sem2 = behaviorDocs.find(b => b.semester === 'Second Semester');
+    const sem1 = behaviorDocs.find(b => b.term === "TERM 1 2026");
+    const sem2 = behaviorDocs.find(b => b.term === "TERM 2 2026");
 
     return {
         sem1: {
@@ -192,8 +192,8 @@ exports.generateStudentReport = async (req, res) => {
     const cleanedGrades = mergeDuplicateGrades(rawGrades, currentClassId);
 
     // 4. Calculate Stats (Academic Only)
-    const statsSem1 = calculateStats(cleanedGrades, 'First Semester');
-    const statsSem2 = calculateStats(cleanedGrades, 'Second Semester');
+    const statsSem1 = calculateStats(cleanedGrades, "TERM 1 2026");
+    const statsSem2 = calculateStats(cleanedGrades, "TERM 2 2026");
 
     let studentFinalAvg = 0;
     if (statsSem1.avg > 0 && statsSem2.avg > 0) studentFinalAvg = (statsSem1.avg + statsSem2.avg) / 2;
@@ -220,8 +220,8 @@ exports.generateStudentReport = async (req, res) => {
         photoUrl: student.imageUrl,
         promotedTo: studentFinalAvg >= 50 ? promotedStr : 'Retained',
       },
-      semester1: statsSem1,
-      semester2: statsSem2,
+      term1: statsSem1,
+      term2: statsSem2,
       finalAverage: parseFloat(studentFinalAvg.toFixed(2)),
       
       // Academic Data
@@ -282,8 +282,8 @@ exports.generateStudentReport = async (req, res) => {
 
                 // Process Logic (Same as single report)
                 const cleanedGrades = mergeDuplicateGrades(rawGrades, student.class);
-                const statsSem1 = calculateStats(cleanedGrades, 'First Semester');
-                const statsSem2 = calculateStats(cleanedGrades, 'Second Semester');
+                const statsSem1 = calculateStats(cleanedGrades, "TERM 1 2026");
+                const statsSem2 = calculateStats(cleanedGrades, "TERM 2 2026");
 
                 // Process Supportive Grades (Letters)
                 const supportiveData = processSupportiveGrades(rawSupportive);
@@ -310,8 +310,8 @@ exports.generateStudentReport = async (req, res) => {
                     },
                     grades: cleanedGrades,
                     supportiveGrades: supportiveData, // <--- Added this to the batch report
-                    semester1: statsSem1,
-                    semester2: statsSem2,
+                    term1: statsSem1,
+                    term2: statsSem2,
                     finalAverage: parseFloat(finalAverage.toFixed(2)),
                     behavior: processBehaviorData(behaviorDocs),
                     footerData: processAttendanceAndConduct(behaviorDocs),
@@ -360,7 +360,7 @@ exports.getCertificateData = async (req, res) => {
         // 3. Fetch Grades
         const studentIds = students.map(s => s._id);
         const grades = await Grade.find({ student: { $in: studentIds }, academicYear })
-            .select('student subject semester finalScore'); // We only need these fields
+            .select('student subject term finalScore'); // We only need these fields
 
         // --- CALCULATE TOTALS & AVERAGES ---
         let certificateList = students.map(student => {
@@ -370,8 +370,8 @@ exports.getCertificateData = async (req, res) => {
             // Iterate through Academic Subjects only
             academicSubjects.forEach(sub => {
                 // Find marks for this subject
-                const g1 = grades.find(g => g.student.equals(student._id) && g.subject.equals(sub._id) && g.semester === 'First Semester');
-                const g2 = grades.find(g => g.student.equals(student._id) && g.subject.equals(sub._id) && g.semester === 'Second Semester');
+                const g1 = grades.find(g => g.student.equals(student._id) && g.subject.equals(sub._id) && g.term === "TERM 1 2026");
+                const g2 = grades.find(g => g.student.equals(student._id) && g.subject.equals(sub._id) && g.term === "TERM 2 2026");
 
                 // Parse Scores
                 const score1 = g1 && g1.finalScore !== null ? parseFloat(g1.finalScore) : null;
@@ -410,14 +410,14 @@ exports.getCertificateData = async (req, res) => {
                 gender: student.gender,
                 photoUrl: student.photoUrl,
                 
-                // Semester 1 Stats
+                // Term 1 Stats
                 sem1: {
                     total: parseFloat(s1Total.toFixed(1)),
                     avg: parseFloat(s1Avg.toFixed(1)),
                     rank: 0 // Placeholder
                 },
 
-                // Semester 2 Stats
+                // Term 2 Stats
                 sem2: {
                     total: parseFloat(s2Total.toFixed(1)),
                     avg: parseFloat(s2Avg.toFixed(1)),
@@ -435,7 +435,7 @@ exports.getCertificateData = async (req, res) => {
 
         // --- RANKING LOGIC (Sort & Assign) ---
 
-        // 1. Rank Semester 1
+        // 1. Rank Term 1
         certificateList.sort((a, b) => b.sem1.avg - a.sem1.avg);
         let currentRank = 1;
         for (let i = 0; i < certificateList.length; i++) {
@@ -443,7 +443,7 @@ exports.getCertificateData = async (req, res) => {
             certificateList[i].sem1.rank = certificateList[i].sem1.avg > 0 ? currentRank : '-';
         }
 
-        // 2. Rank Semester 2
+        // 2. Rank Term 2
         certificateList.sort((a, b) => b.sem2.avg - a.sem2.avg);
         currentRank = 1;
         for (let i = 0; i < certificateList.length; i++) {
@@ -504,11 +504,11 @@ exports.getHighScorers = async (req, res) => {
                     photoUrl: { $first: "$studentInfo.imageUrl" },
                     gender: { $first: "$studentInfo.gender" },
                     
-                    // Semester 1 Total
-                    s1Sum: { $sum: { $cond: [{ $eq: ["$semester", "First Semester"] }, "$finalScore", 0] } },
+                    // Term 1 Total
+                    s1Sum: { $sum: { $cond: [{ $eq: ["$term", "TERM 1 2026"] }, "$finalScore", 0] } },
                     
-                    // Semester 2 Total
-                    s2Sum: { $sum: { $cond: [{ $eq: ["$semester", "Second Semester"] }, "$finalScore", 0] } }
+                    // Term 2 Total
+                    s2Sum: { $sum: { $cond: [{ $eq: ["$term", "TERM 2 2026"] }, "$finalScore", 0] } }
                 }
             },
             // CALCULATE OVERALL TOTAL (S1 + S2)

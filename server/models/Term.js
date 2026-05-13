@@ -1,9 +1,9 @@
 const mongoose = require('mongoose');
 
-const semesterSchema = new mongoose.Schema({
+const termSchema = new mongoose.Schema({
     name: {
         type: String,
-        required: [true, 'Semester name is required'],
+        required: [true, 'Term name is required'],
         unique: true,
         trim: true
     },
@@ -15,4 +15,4 @@ const semesterSchema = new mongoose.Schema({
     }
 }, { timestamps: true });
 
-module.exports = mongoose.model('Semester', semesterSchema);
+module.exports = mongoose.model('Term', termSchema);

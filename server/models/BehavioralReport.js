@@ -22,7 +22,7 @@ const behavioralReportSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    semester: {
+    term: {
         type: String,
         required: true
     },
@@ -43,7 +43,7 @@ const behavioralReportSchema = new mongoose.Schema({
     timestamps: true
 });
 
-// Prevent a student from having more than one behavioral report per semester
-behavioralReportSchema.index({ student: 1, academicYear: 1, semester: 1 }, { unique: true });
+// Prevent a student from having more than one behavioral report per term
+behavioralReportSchema.index({ student: 1, academicYear: 1, term: 1 }, { unique: true });
 
 module.exports = mongoose.model('BehavioralReport', behavioralReportSchema);

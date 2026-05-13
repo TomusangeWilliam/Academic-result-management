@@ -14,7 +14,7 @@ const AtRiskStudents = () => {
   const [filters, setFilters] = useState({
     classId: '',
     streamId: 'all',
-    semester: 'First Semester',
+    term: "TERM 1 2026",
     academicYear: '2026'
   });
 
@@ -80,9 +80,9 @@ const AtRiskStudents = () => {
                   />
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 flex-1">
-                  <select name="semester" value={filters.semester} onChange={handleChange} className="border p-2 rounded w-full">
-                      <option value="First Semester">{t('sem_1')}</option>
-                      <option value="Second Semester">{t('sem_2')}</option>
+                  <select name="term" value={filters.term} onChange={handleChange} className="border p-2 rounded w-full">
+                      <option value="TERM 1 2026">{t('sem_1')}</option>
+                      <option value="TERM 2 2026">{t('sem_2')}</option>
                   </select>
                   <input type="text" name="academicYear" value={filters.academicYear} onChange={handleChange} placeholder={t('academic_year')} className="border p-2 rounded w-full"/>
                   <button onClick={fetchReport} disabled={loading} className="bg-red-600 text-white font-bold py-2 rounded hover:bg-red-700 w-full">
@@ -95,7 +95,7 @@ const AtRiskStudents = () => {
 
             <div className="hidden print:block text-center mb-4">
                 <h1 className="text-xl font-bold uppercase">{t('intervention_list')}</h1>
-                <p>{filters.semester} | {filters.academicYear}</p>
+                <p>{filters.term} | {filters.academicYear}</p>
             </div>
         </div>
 

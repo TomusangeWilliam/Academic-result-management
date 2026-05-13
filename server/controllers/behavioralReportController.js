@@ -6,7 +6,7 @@ const Student = require('../models/Student');
 // @route   POST /api/reports
 exports.addReport = async (req, res) => {
     try {
-        const { studentId, academicYear, semester, evaluations,absent, conduct } = req.body;
+        const { studentId, academicYear, term, evaluations,absent, conduct } = req.body;
 
         const student = await Student.findById(studentId);
         if (!student) {
@@ -16,7 +16,7 @@ exports.addReport = async (req, res) => {
         const report = await BehavioralReport.create({
             student: studentId,
             academicYear,
-            semester,
+            term,
             evaluations,
             createdBy: req.user._id,
             conduct,
@@ -25,7 +25,7 @@ exports.addReport = async (req, res) => {
 
         try {
             const student = await Student.findById(studentId);
-            const message = `A new behavioral report for the ${semester} has been added for ${student.fullName}.`;
+            const message = `A new behavioral report for the ${term} has been added for ${student.fullName}.`;
             const link = `/parent/dashboard`; // Link to their dashboard
 
             // In the future, we would find the parent's User account. For now,
@@ -51,7 +51,7 @@ exports.addReport = async (req, res) => {
     } catch (error) {
         // Handle the unique index error gracefully
         if (error.code === 11000) {
-            return res.status(400).json({ success: false, message: 'A behavioral report for this student already exists for this semester.' });
+            return res.status(400).json({ success: false, message: 'A behavioral report for this student already exists for this term.' });
         }
         res.status(400).json({ success: false, message: error.message });
     }
@@ -75,7 +75,7 @@ exports.getReportsByStudent = async (req, res) => {
     try {
         const reports = await BehavioralReport.find({ student: req.params.studentId })
             .populate('createdBy', 'fullName')
-            .sort({ academicYear: -1, semester: -1 }); // Show newest first
+            .sort({ academicYear: -1, term: -1 }); // Show newest first
 
         res.status(200).json({ success: true, data: reports });
     } catch (error) {

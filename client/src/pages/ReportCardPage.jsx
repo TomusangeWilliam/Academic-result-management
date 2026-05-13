@@ -81,26 +81,26 @@ const ReportCardPage = () => {
             if (!subjectMap.has(subjectName)) {
                 subjectMap.set(subjectName, {
                     subjectName: subjectName,
-                    firstSemester: '-',
-                    secondSemester: '-',
+                    firstTerm: '-',
+                    secondTerm: '-',
                     average: '-'
                 });
             }
 
             const entry = subjectMap.get(subjectName);
 
-            // Assign score based on semester string from API
-            if (gradeEntry.semester === 'First Semester' || gradeEntry.semester === 'Term 1') {
-                entry.firstSemester = gradeEntry.finalScore;
-            } else if (gradeEntry.semester === 'Second Semester' || gradeEntry.semester === 'Term 2') {
-                entry.secondSemester = gradeEntry.finalScore;
+            // Assign score based on term string from API
+            if (gradeEntry.term === "TERM 1 2026" || gradeEntry.term === 'Term 1') {
+                entry.firstTerm = gradeEntry.finalScore;
+            } else if (gradeEntry.term === "TERM 2 2026" || gradeEntry.term === 'Term 2') {
+                entry.secondTerm = gradeEntry.finalScore;
             }
         });
 
         // 3. Convert Map to Array and Calculate Average
         const gradesList = Array.from(subjectMap.values()).map(item => {
-            const s1 = typeof item.firstSemester === 'number' ? item.firstSemester : null;
-            const s2 = typeof item.secondSemester === 'number' ? item.secondSemester : null;
+            const s1 = typeof item.firstTerm === 'number' ? item.firstTerm : null;
+            const s2 = typeof item.secondTerm === 'number' ? item.secondTerm : null;
             
             let average = null;
             if (s1 !== null && s2 !== null) average = (s1 + s2) / 2;
@@ -145,8 +145,8 @@ const ReportCardPage = () => {
     // --- DESTRUCTURING ---
     const { 
         studentInfo = {}, 
-        semester1 = {}, 
-        semester2 = {}, 
+        term1 = {}, 
+        term2 = {}, 
         finalAverage = '-', 
         rank = { sem1: '-', sem2: '-', overall: '-' },
         behavior = {},
@@ -158,8 +158,8 @@ const ReportCardPage = () => {
     // --- AUTOMATED TEACHER COMMENT ---
     const getAutomatedComment = () => {
         let score = 0;
-        if (reportType === 'sem1') score = semester1?.avg || 0;
-        else if (reportType === 'sem2') score = semester2?.avg || 0;
+        if (reportType === 'sem1') score = term1?.avg || 0;
+        else if (reportType === 'sem2') score = term2?.avg || 0;
         else score = finalAverage || 0;
 
         const numScore = Number(score);
@@ -176,14 +176,14 @@ const ReportCardPage = () => {
 
     // Helper for Totals in Footer
     const currentTotal = () => {
-        if (reportType === 'sem1') return semester1?.sum;
-        if (reportType === 'sem2') return semester2?.sum;
-        return (semester1?.sum || 0) + (semester2?.sum || 0);
+        if (reportType === 'sem1') return term1?.sum;
+        if (reportType === 'sem2') return term2?.sum;
+        return (term1?.sum || 0) + (term2?.sum || 0);
     };
 
     const currentAvg = () => {
-        if (reportType === 'sem1') return semester1?.avg;
-        if (reportType === 'sem2') return semester2?.avg;
+        if (reportType === 'sem1') return term1?.avg;
+        if (reportType === 'sem2') return term2?.avg;
         return finalAverage;
     };
 
@@ -339,8 +339,8 @@ const ReportCardPage = () => {
                                         {processedGrades.map((r, i) => (
                                             <tr key={i} className="border-b border-gray-100 hover:bg-cyan-50">
                                                 <td className="py-1.5 px-3 font-bold text-slate-700">{r.subjectName}</td>
-                                                {(reportType === 'sem1' || reportType === 'year') && <td className="text-center text-slate-700 font-medium">{r.firstSemester ?? '-'}</td>}
-                                                {(reportType === 'sem2' || reportType === 'year') && <td className="text-center text-slate-700 font-medium">{r.secondSemester ?? '-'}</td>}
+                                                {(reportType === 'sem1' || reportType === 'year') && <td className="text-center text-slate-700 font-medium">{r.firstTerm ?? '-'}</td>}
+                                                {(reportType === 'sem2' || reportType === 'year') && <td className="text-center text-slate-700 font-medium">{r.secondTerm ?? '-'}</td>}
                                                 {reportType === 'year' && <td className="text-center font-bold text-[#06b6d4] bg-cyan-50/30">{typeof r.average === 'number' ? r.average.toFixed(2) : '-'}</td>}
                                             </tr>
                                         ))}
@@ -371,15 +371,15 @@ const ReportCardPage = () => {
                                         {/* 1. TOTAL */}
                                         <tr className="bg-gray-50 border-t-2 border-slate-200 font-bold text-slate-800">
                                             <td className="py-2 px-3 text-right uppercase text-[9px] tracking-wider">Total Score</td>
-                                            {(reportType === 'sem1' || reportType === 'year') && <td className="text-center border-l border-gray-200">{semester1?.sum || 0}</td>}
-                                            {(reportType === 'sem2' || reportType === 'year') && <td className="text-center border-l border-gray-200">{semester2?.sum || 0}</td>}
+                                            {(reportType === 'sem1' || reportType === 'year') && <td className="text-center border-l border-gray-200">{term1?.sum || 0}</td>}
+                                            {(reportType === 'sem2' || reportType === 'year') && <td className="text-center border-l border-gray-200">{term2?.sum || 0}</td>}
                                             {reportType === 'year' && <td className="text-center border-l border-gray-200 text-[#0f172a]">{currentTotal()}</td>}
                                         </tr>
                                         {/* 2. AVERAGE */}
                                         <tr className="bg-gray-50 border-t border-gray-200 font-bold text-slate-800">
                                             <td className="py-2 px-3 text-right uppercase text-[9px] tracking-wider">Average</td>
-                                            {(reportType === 'sem1' || reportType === 'year') && <td className="text-center border-l border-gray-200">{semester1?.avg || 0}</td>}
-                                            {(reportType === 'sem2' || reportType === 'year') && <td className="text-center border-l border-gray-200">{semester2?.avg || 0}</td>}
+                                            {(reportType === 'sem1' || reportType === 'year') && <td className="text-center border-l border-gray-200">{term1?.avg || 0}</td>}
+                                            {(reportType === 'sem2' || reportType === 'year') && <td className="text-center border-l border-gray-200">{term2?.avg || 0}</td>}
                                             {reportType === 'year' && <td className="text-center border-l border-gray-200 text-[#0f172a]">{currentAvg()}</td>}
                                         </tr>
                                         {/* 3. RANK */}

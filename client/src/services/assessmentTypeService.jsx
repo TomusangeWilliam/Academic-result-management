@@ -3,12 +3,12 @@ import api from './api';
 
 const API_URL = '/assessment-types';
 
-const getBySubject = (subjectId,semester) => {
-    return api.get(API_URL, { params: { subjectId, semester } });
+const getBySubject = (subjectId,term) => {
+    return api.get(API_URL, { params: { subjectId, term } });
 };
 
-const getAllAssessments = (year,semester)=>{
-    return api.get(`${API_URL}/all`,{params:{year,semester}})
+const getAllAssessments = (year,term)=>{
+    return api.get(`${API_URL}/all`,{params:{year,term}})
 }
 
 const create = (data) => {

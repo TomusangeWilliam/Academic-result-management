@@ -83,7 +83,7 @@ const TopStudentsPage = () => {
                                 {/* Card Header */}
                                 <div className="bg-slate-900 text-white p-4 text-center">
                                     <h2 className="text-xl font-bold">{grade}</h2>
-                                    <p className="text-xs opacity-70 uppercase tracking-widest">{viewMode === 'overall' ? 'Annual Top 3' : `${viewMode === 'sem1' ? '1st' : '2nd'} Semester Top 3`}</p>
+                                    <p className="text-xs opacity-70 uppercase tracking-widest">{viewMode === 'overall' ? 'Annual Top 3' : `${viewMode === 'sem1' ? '1st' : '2nd'} Term Top 3`}</p>
                                 </div>
 
                                 {/* List */}

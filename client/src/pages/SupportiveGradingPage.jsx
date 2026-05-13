@@ -17,7 +17,7 @@ const SupportiveGradingPage = () => {
     // --- STATE ---
     const [availableGrades, setAvailableGrades] = useState([]);
     const [selectedGrade, setSelectedGrade] = useState('');
-    const [semester, setSemester] = useState('First Semester');
+    const [term, setTerm] = useState("TERM 1 2026");
     const [academicYear, setAcademicYear] = useState(getCurrentEthYear());
     const [students, setStudents] = useState([]);
     const [subjects, setSubjects] = useState([]);
@@ -43,7 +43,7 @@ const SupportiveGradingPage = () => {
         if (!selectedGrade) return;
         setLoading(true);
         try {
-            const res = await supportiveGradeService.getSheet(selectedGrade, academicYear, semester);
+            const res = await supportiveGradeService.getSheet(selectedGrade, academicYear, term);
             const { students, subjects, grades } = res.data;
             
             setStudents(students);
@@ -101,7 +101,7 @@ const SupportiveGradingPage = () => {
             await supportiveGradeService.saveGrades({ 
                 gradesData: payload,
                 academicYear,
-                semester 
+                term 
             });
             
             alert("✅ Grades Saved Successfully!");
@@ -131,10 +131,10 @@ const SupportiveGradingPage = () => {
                             {availableGrades.map(g => <option key={g} value={g}>{g}</option>)}
                         </select>
                         
-                        {/* Semester Select */}
-                        <select className="p-2 bg-neutral-50 rounded" value={semester} onChange={e => setSemester(e.target.value)}>
-                            <option value="First Semester">Sem 1</option>
-                            <option value="Second Semester">Sem 2</option>
+                        {/* Term Select */}
+                        <select className="p-2 bg-neutral-50 rounded" value={term} onChange={e => setTerm(e.target.value)}>
+                            <option value="TERM 1 2026">Sem 1</option>
+                            <option value="TERM 2 2026">Sem 2</option>
                         </select>
                         
                         {/* NEW: Year Input */}

@@ -27,7 +27,7 @@ const gradingScaleSchema = new mongoose.Schema({
         type: [gradeRangeSchema],
         required: true,
         default: [
-            { grade: '1', minScore: 90, maxScore: 100 },
+            { grade: 'D1', minScore: 90, maxScore: 100 },
             { grade: 'D2', minScore: 80, maxScore: 89 },
             { grade: 'C3', minScore: 70, maxScore: 79 },
             { grade: 'C4', minScore: 60, maxScore: 69 },

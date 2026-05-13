@@ -11,8 +11,8 @@ import StandardCertificate from '../components/certificate/StandardCertificate';
 import PrimaryCertificate from '../components/certificate/PrimaryCertificate';
 
 const SEMESTER_OPTIONS = [
-    { label: 'sem_1', value: 'First Semester' },
-    { label: 'sem_2', value: 'Second Semester' },
+    { label: 'sem_1', value: "TERM 1 2026" },
+    { label: 'sem_2', value: "TERM 2 2026" },
     { label: 'annual', value: 'Annual' },
 ];
 
@@ -27,7 +27,7 @@ const CertificatePage = () => {
     // Form State
     const [formData, setFormData] = useState({
         grade: '',
-        semester: 'First Semester',
+        term: "TERM 1 2026",
         academicYear: '2026',
         awardDate: new Date().toLocaleDateString('en-GB'),
         designType: 'standard'
@@ -85,12 +85,12 @@ const CertificatePage = () => {
             const response = await reportCardService.getCertificateData(formData.grade, formData.academicYear);
             const roster = response.data;
 
-            // Helper to get specific semester data
-            const getSemKey = (sem) => sem === 'First Semester' ? 'sem1' : sem === 'Second Semester' ? 'sem2' : 'overall';
+            // Helper to get specific term data
+            const getSemKey = (sem) => sem === "TERM 1 2026" ? 'sem1' : sem === "TERM 2 2026" ? 'sem2' : 'overall';
 
             const formatted = roster
                 .map(student => {
-                    const stats = student[getSemKey(formData.semester)];
+                    const stats = student[getSemKey(formData.term)];
                     return { ...student, rank: stats.rank, avg: stats.avg };
                 })
                 .filter(s => s.rank !== '-' && Number(s.rank) >= 1 && Number(s.rank) <= 3)
@@ -111,7 +111,7 @@ const CertificatePage = () => {
 
     const handlePrint = useReactToPrint({ 
         contentRef: componentRef, 
-        documentTitle: `Certificates_${formData.grade}_${formData.semester}` 
+        documentTitle: `Certificates_${formData.grade}_${formData.term}` 
     });
 
     return (
@@ -151,8 +151,8 @@ const CertificatePage = () => {
                         </div>
 
                         <div className="space-y-1">
-                            <label className="text-xs font-bold text-gray-500 uppercase">{t('semester')}</label>
-                            <select name="semester" value={formData.semester} onChange={handleInputChange} className="w-full border-gray-300 rounded-lg">
+                            <label className="text-xs font-bold text-gray-500 uppercase">{t('term')}</label>
+                            <select name="term" value={formData.term} onChange={handleInputChange} className="w-full border-gray-300 rounded-lg">
                                 {SEMESTER_OPTIONS.map(opt => <option key={opt.value} value={opt.value}>{t(opt.label)}</option>)}
                             </select>
                         </div>

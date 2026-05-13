@@ -17,7 +17,7 @@ const AddReportPage = () => {
     const navigate = useNavigate();
 
     // --- State Management ---
-    const [semester, setSemester] = useState('First Semester');
+    const [term, setTerm] = useState("TERM 1 2026");
     const [academicYear, setAcademicYear] = useState('2026');
     const [conduct, setConduct] = useState('A');
     const [evaluations, setEvaluations] = useState(
@@ -33,7 +33,7 @@ const AddReportPage = () => {
             try {
                 const res = await configService.getConfig();
                 if (res.data.data) {
-                    setSemester(res.data.data.currentSemester);
+                    setTerm(res.data.data.currentTerm);
                     setAcademicYear(res.data.data.currentAcademicYear);
                 }
             } catch (err) {
@@ -54,7 +54,7 @@ const AddReportPage = () => {
         e.preventDefault();
         setLoading(true);
         setError(null);
-        const reportData = { studentId, semester, academicYear, conduct,absent, evaluations };
+        const reportData = { studentId, term, academicYear, conduct,absent, evaluations };
         try {
             await behavioralReportService.addReport(reportData);
             alert('Behavioral report added successfully!');
@@ -80,13 +80,13 @@ const AddReportPage = () => {
             </Link>
             
             <form onSubmit={handleSubmit}>
-                {/* --- Top Section: Semester, Year, Conduct --- */}
+                {/* --- Top Section: Term, Year, Conduct --- */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                     <div>
-                        <label htmlFor="semester" className={inputLabel}>Semester</label>
-                        <select id="semester" value={semester} onChange={(e) => setSemester(e.target.value)} className={selectInput}>
-                            <option value="First Semester">First Semester</option>
-                            <option value="Second Semester">Second Semester</option>
+                        <label htmlFor="term" className={inputLabel}>Term</label>
+                        <select id="term" value={term} onChange={(e) => setTerm(e.target.value)} className={selectInput}>
+                            <option value="TERM 1 2026">First Term</option>
+                            <option value="TERM 2 2026">Second Term</option>
                         </select>
                     </div>
                     <div>

@@ -6,8 +6,8 @@ const Grade = require('../models/Grade');
 // @desc    Get all assessment types for a specific subject
 // @route   GET /api/assessment-types?subjectId=...
 exports.getAssessmentTypesBySubject = async (req, res) => {
-    // 1. We now also expect 'semester' as a query parameter
-    const { subjectId, semester } = req.query;
+    // 1. We now also expect 'term' as a query parameter
+    const { subjectId, term } = req.query;
 
     if (!subjectId) {
         return res.status(400).json({ message: 'Subject ID is required' });
@@ -15,22 +15,13 @@ exports.getAssessmentTypesBySubject = async (req, res) => {
     
     // 2. Build the filter object dynamically
     const filter = { subject: subjectId };
-    if (semester) {
-        filter.semester = semester;
+    if (term) {
+        filter.term = term;
     }
 
     try {
         const assessmentTypes = await AssessmentType.find(filter).sort({ createdAt: 1 });
-        // Deduplicate by name, month, and semester
-        const uniqueMap = new Map();
-        assessmentTypes.forEach(at => {
-            const key = `${at.name}-${at.month}-${at.semester}`;
-            if (!uniqueMap.has(key)) {
-                uniqueMap.set(key, at);
-            }
-        });
-        const uniqueAssessmentTypes = Array.from(uniqueMap.values());
-        res.status(200).json({ success: true, data: uniqueAssessmentTypes });
+        res.status(200).json({ success: true, data: assessmentTypes });
     } catch (error) {
         res.status(500).json({ message: 'Server error', error: error.message });
     }
@@ -39,20 +30,32 @@ exports.getAssessmentTypesBySubject = async (req, res) => {
 // @desc    Create a new assessment type
 // @route   POST /api/assessment-types
 exports.createAssessmentType = async (req, res) => {
-    // 1. Add 'semester' to the destructured body
-    const { name, totalMarks, subjectId, classId, month, semester, year } = req.body;
+    const { name, totalMarks, subjectId, classId, month, term, year } = req.body;
     try {
-        
-        const ethiopianYear = parseInt(new Intl.DateTimeFormat('en-US', { calendar: 'ethiopic', year: 'numeric' }).format(new Date()).replace(/\D/g, ''));
-        if(year > ethiopianYear){
-            return res.status(400).json({message: "You did not inter the correct year."})
+        // Prevent similar assessment names for the same subject/term/month
+        const existing = await AssessmentType.findOne({
+            subject: subjectId,
+            term,
+            month,
+            name: { $regex: new RegExp(`^${name.trim().split(' ')[0]}`, 'i') } // Matches "Mid" in "Mid Term"
+        });
+
+        if (existing) {
+            return res.status(400).json({ 
+                message: `An assessment starting with "${name.split(' ')[0]}" already exists for this period. Use that or edit it instead.` 
+            });
         }
-        
+
+        const ethiopianYear = parseInt(new Intl.DateTimeFormat('en-US', { calendar: 'ethiopic', year: 'numeric' }).format(new Date()).replace(/\D/g, ''));
+        if(year && year > ethiopianYear){
+            return res.status(400).json({message: "You did not enter the correct year."})
+        }
+
         const subject = await Subject.findById(subjectId);
         if (!subject) return res.status(404).json({ message: 'Subject not found' });
         
         const assessmentType = await AssessmentType.create({
-            name, totalMarks, month, semester,
+            name, totalMarks, month, term,
             subject: subjectId,
             class: classId,
             year
@@ -67,10 +70,10 @@ exports.createAssessmentType = async (req, res) => {
 };
 
 exports.getAllAssessments = async (req,res)=>{
-  const {year,semester} = req.query;
+  const {year,term} = req.query;
 
   try{
-    const assessmentTypes = await AssessmentType.find({year,semester}).select('name')
+    const assessmentTypes = await AssessmentType.find({year,term}).select('name')
       if(assessmentTypes){
         const uniqueAssessment = Array.from(
           new Map(assessmentTypes.map(ass=>[ass.name,ass])).values()

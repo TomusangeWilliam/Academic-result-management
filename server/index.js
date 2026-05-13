@@ -44,7 +44,7 @@ app.use('/api/schedule',require('./routes/scheduleRoutes'))
 app.use('/api/quizzes', require('./routes/quizRoutes'))
 app.use('/api/classes', require('./routes/classRoutes'))
 app.use('/api/config', require('./routes/configRoutes'))
-app.use('/api/semesters', require('./routes/semesterRoutes'))
+app.use('/api/terms', require('./routes/termRoutes'))
 app.use('/api/grading-scales', require('./routes/gradingScaleRoutes'))
 app.use('/api/divisions', require('./routes/divisionRoutes'))
 
@@ -79,7 +79,7 @@ const seedGradingScale = async () => {
         schoolLevel: 'primary',
         applicableClasses: ['P4', 'P5', 'P6', 'P7'],
         ranges: [
-          { grade: '1', minScore: 90, maxScore: 100 },
+          { grade: 'D1', minScore: 90, maxScore: 100 },
           { grade: 'D2', minScore: 80, maxScore: 89 },
           { grade: 'C3', minScore: 70, maxScore: 79 },
           { grade: 'C4', minScore: 60, maxScore: 69 },
@@ -102,7 +102,7 @@ const seedGradingScale = async () => {
         schoolLevel: 'primary',
         applicableClasses: ['P1', 'P2', 'P3'],
         ranges: [
-          { grade: '1', minScore: 90, maxScore: 100 },
+          { grade: 'D1', minScore: 90, maxScore: 100 },
           { grade: 'D2', minScore: 80, maxScore: 89 },
           { grade: 'C3', minScore: 70, maxScore: 79 },
           { grade: 'C4', minScore: 60, maxScore: 69 },
@@ -337,7 +337,7 @@ const seedAssessmentTypes = async () => {
             subject: subject._id,
             class: subject.class,
             month: 'September', // Default month
-            semester: 'Term 1', // Default semester
+            term: 'Term 1', // Default term
             year: new Date().getFullYear()
           });
           console.log(`✅ ${subject.name} - ${assessmentType.name} assessment type created!`);

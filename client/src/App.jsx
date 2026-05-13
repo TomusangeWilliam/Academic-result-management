@@ -64,8 +64,10 @@ import AtRiskStudents from './pages/AtRiskStudents';
 import AllSubjectAnalytics from './pages/AllSubjectAnalytics';
 import ClassManagementPage from './pages/ClassManagementPage';
 import SchoolSettingsPage from './pages/SchoolSettingsPage';
-import SemesterManagementPage from './pages/SemesterManagementPage';
+import TermManagementPage from './pages/TermManagementPage';
 import PdfUploadPage from './pages/PdfUploadPage';
+import ClassPerformance from './pages/ClassPerformance';
+import CumulativeClassPerformance from './pages/CumulativeClassPerformance';
 
 import CertificatePage from './pages/CertificatePage';
 import SendNotificationPage from './pages/SendNotificationPage';
@@ -142,6 +144,8 @@ function App() {
             <Route path="/at-risk" element={<AtRiskStudents />} />
             <Route path="/allsubjectAnalysis" element={<AllSubjectAnalytics/>}/>
             <Route path='/subject-performance' element={<SubjectPerformance/>}/>
+            <Route path='/class-performance' element={<ClassPerformance/>}/>
+            <Route path='/cumulative-performance' element={<CumulativeClassPerformance/>}/>
             <Route path='/teachers' element={<TeachersPage/>}/>
             <Route path='/subject-analysis' element={<SubjectAnalysisDetail/>}/>
             <Route path="/profile" element={<ProfilePage />} />
@@ -185,7 +189,7 @@ function App() {
               <Route path='/master' element={<MasterSchedulePage/>}/>
               <Route path='/classes' element={<ClassManagementPage />} />
               <Route path='/settings' element={<SchoolSettingsPage />} />
-              <Route path='/admin/semesters' element={<SemesterManagementPage />} />
+              <Route path='/admin/terms' element={<TermManagementPage />} />
               <Route path='/admin/upload-pdf' element={<PdfUploadPage />} />
               <Route path='/admin/grading-scales' element={<GradingScaleManagementPage />} />
               <Route path='/admin/divisions' element={<DivisionManagementPage />} />

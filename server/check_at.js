@@ -10,10 +10,10 @@ mongoose.connect(process.env.MONGO_URI).then(async () => {
     console.log(`Assessment Types for P7 (${ats.length} total):`);
     const seen = new Set();
     ats.forEach(at => {
-        const key = `${at.name}|${at.totalMarks}|${at.semester}`;
+        const key = `${at.name}|${at.totalMarks}|${at.term}`;
         if (!seen.has(key)) {
             seen.add(key);
-            console.log(` - name: "${at.name}" | totalMarks: ${at.totalMarks} | semester: ${at.semester} | year: ${at.year}`);
+            console.log(` - name: "${at.name}" | totalMarks: ${at.totalMarks} | term: ${at.term} | year: ${at.year}`);
         }
     });
     process.exit();

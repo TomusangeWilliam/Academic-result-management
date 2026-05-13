@@ -110,7 +110,7 @@ const EditGradePage = () => {
                     const queuePayload = {
                         assessmentTypeId: item.assessmentType,
                         subjectId: gradeData.subject._id,
-                        semester: gradeData.semester,
+                        term: gradeData.term,
                         academicYear: gradeData.academicYear,
                         scores: [{ 
                             studentId: gradeData.student._id || gradeData.student, 
@@ -132,7 +132,7 @@ const EditGradePage = () => {
         try {
             const updatePayload = { 
                 assessments: assessmentsPayload,
-                semester: gradeData.semester,
+                term: gradeData.term,
                 academicYear: gradeData.academicYear
             };
             await gradeService.updateGrade(gradeId, updatePayload);
@@ -170,18 +170,18 @@ const EditGradePage = () => {
                     <p className="text-lg font-bold text-blue-900">{gradeData.subject.name}</p>
                 </div>
                 <div>
-                    <p className="text-sm text-gray-500 uppercase font-bold">{t('semester')}</p>
+                    <p className="text-sm text-gray-500 uppercase font-bold">{t('term')}</p>
                     {currentUser?.role === 'admin' ? (
                         <select 
-                            value={gradeData.semester} 
-                            onChange={e => setGradeData({...gradeData, semester: e.target.value})}
+                            value={gradeData.term} 
+                            onChange={e => setGradeData({...gradeData, term: e.target.value})}
                             className="border p-1 rounded font-bold text-blue-900"
                         >
-                            <option value="First Semester">{t('sem_1')}</option>
-                            <option value="Second Semester">{t('sem_2')}</option>
+                            <option value="TERM 1 2026">{t('sem_1')}</option>
+                            <option value="TERM 2 2026">{t('sem_2')}</option>
                         </select>
                     ) : (
-                        <p className="text-lg font-bold text-blue-900">{gradeData.semester}</p>
+                        <p className="text-lg font-bold text-blue-900">{gradeData.term}</p>
                     )}
                 </div>
                 <div>

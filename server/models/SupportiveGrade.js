@@ -15,9 +15,9 @@ const supportiveGradeSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    semester: {
+    term: {
         type: String,
-        enum: ['First Semester', 'Second Semester'],
+        enum: ["TERM 1 2026", "TERM 2 2026"],
         required: true
     },
     score: {
@@ -26,7 +26,7 @@ const supportiveGradeSchema = new mongoose.Schema({
     }
 }, { timestamps: true });
 
-// Ensure a student gets only one grade per subject per semester
-supportiveGradeSchema.index({ student: 1, subject: 1, semester: 1, academicYear: 1 }, { unique: true });
+// Ensure a student gets only one grade per subject per term
+supportiveGradeSchema.index({ student: 1, subject: 1, term: 1, academicYear: 1 }, { unique: true });
 
 module.exports = mongoose.model('SupportiveGrade', supportiveGradeSchema);
